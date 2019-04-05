@@ -80,9 +80,7 @@ test2<-forest9[-indices,]
 
 ```
 
-
-
-```
+Some changes blah blah blah.
 
 ```{r}
 
