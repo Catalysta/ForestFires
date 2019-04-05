@@ -74,6 +74,8 @@ pairs(forest9)
 ```{r}
 #split training and testing set
 
+set.seed(6950)
+
 indices<-sample(1:517,388)
 train2<-forest9[indices,]
 test2<-forest9[-indices,]
