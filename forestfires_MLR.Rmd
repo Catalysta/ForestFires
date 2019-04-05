@@ -1,0 +1,74 @@
+---
+title: "forestfires_analysis"
+author: "Christina Sousa"
+date: "April 3, 2019"
+output: html_document
+---
+
+```{r}
+#please run all chunks from EDA prior to running this document.
+
+#Check VIF since data appears to present with high multicollinearity
+
+#set up regression models
+
+cts.pred<-forest6[,6:12]
+q<-ncol(cts.pred)
+r2k<-numeric(q)
+for (i in 1:q){
+  formula<-as.formula(paste(colnames(cts.pred)[i],"~."))
+  model<-lm(formula,data = cts.pred)
+  r2k[i]<-summary(model)$r.squared
+}
+vifk<-1/(1-r2k)
+vifk #these actually don't look too bad (but not great either)
+
+#regress DMC on DC
+summary(lm(DMC~DC, dat=forest6))$r.squared #actually not too bad, ok to leave in.
+
+#check cook's distances
+cd<-cooks.distance(lm(Larea~.,dat=forest6))
+which(cd>qf(0.5,ncol(forest6)+1,nrow(forest6)-ncol(forest6)-1)) #these also look fine
+
+```
+
+Since remaining diagnostics look OK, proceed with variable selection.
+
+Since p is small, we enumerate full model space using `leaps` package.
+
+```{r}
+require(leaps)
+y<-forest6$Larea
+X<-forest6[,c(1:12,14:15)]
+regsubsets.out=regsubsets(y ~ X,
+			   data = as.data.frame(cbind(y,X)),
+               nbest = 2,       # 2 best models for each number of predictors
+               nvmax = NULL,    # NULL for no limit on number of variables
+               force.in = NULL, force.out = NULL,
+               method = "exhaustive") # or "forward" for forward selection,
+                                      # "backward" for backward elimination
+regsubsets.out
+sum.reg=summary(regsubsets.out)
+sum.reg
+
+```
+
+`DMC` appears to be least important, while `month` and `day` appear to be important. R^2 is extremely low. This data simply does not seem to predict `Larea` very well.
+
+```{r}
+par(mfrow=c(1,3))
+plot(regsubsets.out, scale = "r2", main = "R^2",cex.axis=2,cex.lab=2,cex=2)
+plot(regsubsets.out, scale = "adjr2", main = "Adjusted R^2",cex.axis=2,cex.lab=2,cex=2)
+plot(regsubsets.out, scale = "Cp", main = "Mallow's Cp",cex.axis=2,cex.lab=2,cex=2)
+```
+
+Subset the data to train the model, reserving 1/4 for validation
+```{r}
+set.seed(6950)
+indices<-sample(1:270,202)
+train<-forest6[indices,]
+test<-forest6[-indices,]
+```
+
+
+

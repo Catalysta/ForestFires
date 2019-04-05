@@ -1,0 +1,92 @@
+---
+title: "forestfires_logistic"
+author: "Christina Sousa"
+date: "April 4, 2019"
+output: html_document
+---
+
+```{r}
+#data file can be obtained at https://archive.ics.uci.edu/ml/machine-learning-databases/forest-fires/
+#read data into r
+forest7 <-read.csv("forestfires.csv")
+
+#change spatial variables X and Y to factors
+forest7$X<-as.factor(forest7$X)
+forest7$Y<-as.factor(forest7$Y)
+
+#add binomial area column
+forest8<-cbind(forest7,forest7$area>0)
+colnames(forest8)[14]<-"large"
+forest8$large<-as.factor(forest8$large)
+
+#add categorical rain column
+forest9<-cbind(forest8,forest8$rain>0)
+colnames(forest9)[15]<-"rainbin"
+forest9$rain<-as.factor(forest9$rain)
+
+#add categorical weekday and season variables
+week <- rep(0,length(forest9$day))
+
+week[which(forest9$day == "mon")] <- 0
+week[which(forest9$day == "tue")] <- 0
+week[which(forest9$day == "wed")] <- 0
+week[which(forest9$day == "thu")] <- 0
+week[which(forest9$day == "fri")] <- 0
+week[which(forest9$day == "sat")] <- 1
+week[which(forest9$day == "sun")] <- 1
+
+seas <- rep(0,length(forest9$month), ylab = "log(area)",
+     xlab = "Month",main = "Month Data")
+
+seas[which(forest9$month == "jan")] <- 0
+seas[which(forest9$month == "feb")] <- 0
+seas[which(forest9$month == "mar")] <- 0
+seas[which(forest9$month == "apr")] <- 1
+seas[which(forest9$month == "may")] <- 1
+seas[which(forest9$month == "jun")] <- 1
+seas[which(forest9$month == "jul")] <- 2
+seas[which(forest9$month == "aug")] <- 2
+seas[which(forest9$month == "sep")] <- 2
+seas[which(forest9$month == "oct")] <- 3
+seas[which(forest9$month == "nov")] <- 3
+seas[which(forest9$month == "dec")] <- 3
+
+forest9$week <- as.factor(week)
+levels(forest9$week)<-c("weekday","weekend")
+forest9$season <- as.factor(seas)
+levels(forest9$season)<-c("Winter","Spring","Summer","Fall")
+```
+
+```{r}
+#clean up other variables
+
+forest9$month = factor(forest9$month,
+                       levels = levels(forest9$month)[c(5,                                                        4,8,1,9,7,6,2,12,11,10,3)])
+forest9$day = factor(forest9$day,
+                     levels = 
+                       levels(forest9$day)[c(2,6,7,5,1,3,4)])
+pairs(forest9)
+
+
+
+```
+
+```{r}
+#split training and testing set
+
+indices<-sample(1:517,388)
+train2<-forest9[indices,]
+test2<-forest9[-indices,]
+
+```
+
+
+
+```
+
+```{r}
+
+mylogit<-glm(formula = large ~ temp+RH+DC+ISI+DMC, family = "binomial", data = train2)
+summary(mylogit)
+
+```

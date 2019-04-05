@@ -1,0 +1,448 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={Montesinho Forest Fires},
+            pdfauthor={Fernando Anorve-Lopez and Christina Sousa},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\newcommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{Montesinho Forest Fires}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{Fernando Anorve-Lopez and Christina Sousa}
+    \preauthor{\centering\large\emph}
+  \postauthor{\par}
+      \predate{\centering\large\emph}
+  \postdate{\par}
+    \date{March 12, 2019}
+
+
+\begin{document}
+\maketitle
+
+\section{Introduction}\label{introduction}
+
+The data are from \(n=517\) forest fires occuring in the Montesinho
+National Park in northeast Portugal between January 2000 and December
+2003. They come to us by way of Paulo Cortez and Anibal Morais at the
+University of Minho, in Guimaraes, Portugal. Our goal is to use 12
+predictors to model the total burned area of large forest fires within
+the park. This could be done using a multiple linear regression model.
+Additionally, we would like to identify which values of the predictors
+yield fires with burn area less than \(100m^2\), and which ones lead to
+larger fires. This could be done using logistic regression.
+
+At each fire occurrence, a fire inspector recorded the date and and time
+of the fire, as well as the spatial location of the fire within the park
+boundaries. They also recorded the type of vegetation, weather
+conditions, total burn area, and six components of the Fire Weather
+Index (FWI), a Canadian system for rating fire danger. These included
+Fine Fuel Moisture Code (FFMC), Duff Moisture Code (DMC), Drought Code
+(DC), Initial Spread Index (ISI), Buildup Index (BUI) and FWI. The FFMC
+variable pertains to the moisture content of surface litter; the DMC and
+DC variable pertain to the ``moisture content of shallow and deep
+organic layers'' (Cortez and Morais 2017); the ISI variable pertains to
+fire velocity spread; and finally the BUI variable pertains to the
+amount of available fuel. These various codes and scores each contribute
+to the final FWI score. Although the individual elements are not
+measured on the same scale, higher values indicate greater danger of
+fire in all cases.
+
+The researchers did not include BUI and FWI in the data, because these
+were strongly collinear with the other predictors.
+
+The variables in the data (Cortez and Morais 2017) are given by:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{X} \emph{(nominal)}: x-axis spatial coordinate within the
+  Montesinho park map: 1 to 9
+\item
+  \textbf{Y} \emph{(nominal)}: y-axis spatial coordinate within the
+  Montesinho park map: 2 to 9
+\item
+  \textbf{month} \emph{(nominal)}: month of the year: ``jan'' to ``dec''
+\item
+  \textbf{day} \emph{(nominal)}: day of the week: ``mon'' to ``sun''
+\item
+  \textbf{FFMC} \emph{(ordinal, continuous)}: FFMC index from the FWI
+  system: 18.7 to 96.20
+\item
+  \textbf{DMC} \emph{(ordinal, continuous)}: DMC index from the FWI
+  system: 1.1 to 291.3
+\item
+  \textbf{DC} \emph{(ordinal, continuous)}: DC index from the FWI
+  system: 7.9 to 860.6
+\item
+  \textbf{ISI} \emph{(ordinal, continuous)}: ISI index from the FWI
+  system: 0.0 to 56.10
+\item
+  \textbf{temp} \emph{(interval, continuous)}: temperature in Celsius
+  degrees: 2.2 to 33.30
+\item
+  \textbf{RH} \emph{(ordinal, discrete)}: relative humidity in \%: 15.0
+  to 100
+\item
+  \textbf{wind} \emph{(ratio, continuous)} wind speed in km/h: 0.40 to
+  9.40
+\item
+  \textbf{rain} \emph{(ratio, discrete)}: outside rain in mm/m2 : 0.0 to
+  6.4
+\item
+  \textbf{area} \emph{(ratio, continuous)}: the burned area of the
+  forest (in ha): 0.00 to 1090.84
+\end{enumerate}
+
+\section{Exploratory Data Analysis}\label{exploratory-data-analysis}
+
+We begin the analysis by reading in the data, plotting it, and viewing
+relevant summary statistics.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#data file can be obtained at https://archive.ics.uci.edu/ml/machine-learning-databases/forest-fires/}
+\CommentTok{#read data into r}
+\NormalTok{forest <-}\KeywordTok{read.csv}\NormalTok{(}\StringTok{"forestfires.csv"}\NormalTok{)}
+
+\CommentTok{#change spatial variables X and Y to factors}
+\NormalTok{forest}\OperatorTok{$}\NormalTok{X<-}\KeywordTok{as.factor}\NormalTok{(forest}\OperatorTok{$}\NormalTok{X)}
+\NormalTok{forest}\OperatorTok{$}\NormalTok{Y<-}\KeywordTok{as.factor}\NormalTok{(forest}\OperatorTok{$}\NormalTok{Y)}
+
+\CommentTok{#change RH variable to numeric rather than integer (don't think this is needed)}
+\CommentTok{#forest$RH<-as.numeric(forest$RH)}
+
+\KeywordTok{head}\NormalTok{(forest)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   X Y month day FFMC  DMC    DC  ISI temp RH wind rain area
+## 1 7 5   mar fri 86.2 26.2  94.3  5.1  8.2 51  6.7  0.0    0
+## 2 7 4   oct tue 90.6 35.4 669.1  6.7 18.0 33  0.9  0.0    0
+## 3 7 4   oct sat 90.6 43.7 686.9  6.7 14.6 33  1.3  0.0    0
+## 4 8 6   mar fri 91.7 33.3  77.5  9.0  8.3 97  4.0  0.2    0
+## 5 8 6   mar sun 89.3 51.3 102.2  9.6 11.4 99  1.8  0.0    0
+## 6 8 6   aug sun 92.3 85.3 488.0 14.7 22.2 29  5.4  0.0    0
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{pairs}\NormalTok{(forest)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{forestfires_Final_files/figure-latex/unnamed-chunk-1-1.pdf}
+
+Out of 517 records, there are 247 records with an \texttt{area} value of
+0. The \texttt{area} data is considerably right-skewed. This is
+explained by Cortez and Morais as a general trend with forest fire data
+observed in various locations: either the fires are extinguished quickly
+and burn less than \(100m^2\) of area, or they are not easily contained
+and end up burning a large area. Fires that burn less than \(100m^2\) of
+area are all catalogued as zero. This poses a missing data problem and
+prevents us from doing a complete analysis on these types of fires. To
+face this problem we can apply the MLR model to the data conditioned to
+nonzero burn area only. We remove these data for now, however, we will
+make use of them later to compare small fires and large fires using
+logistic regression.
+
+\begin{center}\includegraphics{forestfires_Final_files/figure-latex/fig1-1} \end{center}
+
+The values of \texttt{area} also range over several orders of magnitude.
+The positive skewness suggests the need of a transformation. Trying log
+transformation seems suitable. We log transform \texttt{area} of the
+nonzero-valued observations and note that the histogram looks more
+symmetric now.
+
+\begin{center}\includegraphics{forestfires_Final_files/figure-latex/fig2-1} \end{center}
+
+We now turn out attention to the other relevant summary statistics of
+the data. We notice that certain days and months appear to have more
+fires. Also, the distributions of \texttt{FFMC}, \texttt{DMC},
+\texttt{DC}, and \texttt{ISI} appear to be somewhat skewed. Finally,
+\texttt{rain} does not seem to offer much information for forest fires
+with large areas.
+
+\begin{verbatim}
+##        X      Y           month     day          FFMC      
+##  6      :48   2: 15   aug    :99   fri:43   Min.   :63.50  
+##  4      :47   3: 34   sep    :97   mon:39   1st Qu.:90.33  
+##  2      :42   4:111   mar    :19   sat:42   Median :91.70  
+##  8      :37   5: 68   jul    :18   sun:47   Mean   :91.03  
+##  7      :30   6: 38   feb    :10   thu:31   3rd Qu.:92.97  
+##  1      :25   8:  1   dec    : 9   tue:36   Max.   :96.20  
+##  (Other):41   9:  3   (Other):18   wed:32                  
+##       DMC              DC             ISI              temp      
+##  Min.   :  3.2   Min.   : 15.3   Min.   : 0.800   Min.   : 2.20  
+##  1st Qu.: 82.9   1st Qu.:486.5   1st Qu.: 6.800   1st Qu.:16.12  
+##  Median :111.7   Median :665.6   Median : 8.400   Median :20.10  
+##  Mean   :114.7   Mean   :570.9   Mean   : 9.177   Mean   :19.31  
+##  3rd Qu.:141.3   3rd Qu.:721.3   3rd Qu.:11.375   3rd Qu.:23.40  
+##  Max.   :291.3   Max.   :860.6   Max.   :22.700   Max.   :33.30  
+##                                                                  
+##        RH             wind            rain             Larea        
+##  Min.   :15.00   Min.   :0.400   Min.   :0.00000   Min.   :-2.4079  
+##  1st Qu.:33.00   1st Qu.:2.700   1st Qu.:0.00000   1st Qu.: 0.7608  
+##  Median :41.00   Median :4.000   Median :0.00000   Median : 1.8516  
+##  Mean   :43.73   Mean   :4.113   Mean   :0.02889   Mean   : 1.8448  
+##  3rd Qu.:53.00   3rd Qu.:4.900   3rd Qu.:0.00000   3rd Qu.: 2.7358  
+##  Max.   :96.00   Max.   :9.400   Max.   :6.40000   Max.   : 6.9947  
+## 
+\end{verbatim}
+
+As categorical data, the \texttt{month} variable can be divided into
+subsets defined by seasons.
+
+\includegraphics{forestfires_Final_files/figure-latex/unnamed-chunk-3-1.pdf}
+
+We can also redefine Jan, Feb, Mar as Winter; Apr, May, Jun as Spring;
+Jul, Aug, Sep as Summer, and Oct, Nov, Dec, as Fall, because seasonal
+weather conditions can have an effect on incidence of wildfires. In this
+case, Summer records show more variability than any other season.
+
+\begin{center}\includegraphics{forestfires_Final_files/figure-latex/fig3-1} \end{center}
+
+The \texttt{day} variable can be divided into subsets ``weekdays'' and
+``weekends'', since forest fires could be explained by exposure to human
+beings who visit the park on the weekends.
+
+\begin{center}\includegraphics{forestfires_Final_files/figure-latex/fig 4-1} \end{center}
+
+\begin{center}\includegraphics{forestfires_Final_files/figure-latex/fig 4-2} \end{center}
+
+With respect to the spacial coordinates, it seems that the \texttt{X}
+and \texttt{Y} coordinates would be better explained by assigning each
+grid of the map its own category, to see if one area of the map appears
+more than others. Indeed, there are 4 regions (out of 81) of the map
+that had 20 or more fires in this 3-year period. It may be interesting
+to compare the sizes of fires in these areas, and whether these fires
+are bigger than fires in other areas of the park.
+
+\begin{center}\includegraphics{forestfires_Final_files/figure-latex/unnamed-chunk-5-1} \end{center}
+
+We also note that, after removing the forest fires with zero area, there
+are only 2 records with nonzero values for \texttt{rain}. Hence it does
+not make sense to include this predictor in our current analysis, and we
+remove it. We may take another look at this later in the logistic
+regression setting. We now view the continuous predictors after removal
+of this variable:
+
+\includegraphics{forestfires_Final_files/figure-latex/unnamed-chunk-6-1.pdf}
+
+For the fire index variables, we note that the quantiles appear to be a
+bit skewed, particularly for \texttt{FFMC} and \texttt{DMC}, so we
+suspect that transformation of these variables may be in order. The
+boxplots of the fire index variables appear below.
+
+\begin{center}\includegraphics{forestfires_Final_files/figure-latex/unnamed-chunk-7-1} \end{center}
+
+Noticing that \texttt{FFMC} is negatively skewed, we can try to
+normalize it by reflecting it, adding an appropriate value to make it
+positive, and finally applying a log transformation.
+\[f(\text{FFMC}) = \log(-\text{FFMC}+ \max(\text{FFMC})+1) \]
+
+This seems to correct the skew.
+
+\begin{center}\includegraphics{forestfires_Final_files/figure-latex/unnamed-chunk-8-1} \end{center}
+
+The final cleaned continuous variables appear below.
+
+\includegraphics{forestfires_Final_files/figure-latex/unnamed-chunk-9-1.pdf}
+
+Finally, we comment on collinearity in this data. It appears that
+\texttt{DMC} and \texttt{DC} are linearly correlated. There may also be
+correlation between \texttt{temp} and \texttt{ISI} and \texttt{RH} and
+\texttt{temp}. In fact, \texttt{temp} appears to be linearly correlated
+with just about all the other predictors. There is also an interesting
+(and perhaps troubling!) curvilinear relationship between \texttt{DMC}
+and \texttt{ISI} as well as \texttt{DMC} and \texttt{temp}. To
+summarize, there appears quite a bit of multicollinearity in this data.
+This may be because the fire indexes are based on the various weather
+variables, and because weather variables such as temperature and
+humidity are related to one another.
+
+\section{Summary}\label{summary}
+
+At this point there do not appear to be any continuous variables that
+look like strong predictors for \texttt{Larea}. Perhaps the discrete
+variables will become more important as we attempt to model this
+response. We also think that a logistic regression approach might be
+more productive in determining which variables are significant to
+predict whether the burn area of a wildfire will be larger or smaller
+than \(100m^2.\)
+
+We could also attempt to interpolate the missing data for the zero-area
+entries by randomly sampling areas between \(0\) and \(100m^2\)
+according to a distribution consistent with the rest of the data, to see
+if this improves our results.
+
+To model \texttt{Larea}, we also might proceed by seeking out suitable
+transformations of these variables by applying the Yeo-Johnson method.
+The \texttt{car} package function \texttt{powerTransform} suggests that
+the cleaned data could be normalized with a few reasonable
+transformations.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{require}\NormalTok{(car)}
+\KeywordTok{summary}\NormalTok{(}\KeywordTok{powerTransform}\NormalTok{(}\KeywordTok{cbind}\NormalTok{(TrFFMC,DMC,DC,ISI,temp,RH,wind)}\OperatorTok{~}\DecValTok{1}\NormalTok{,forest5,}\DataTypeTok{family=}\StringTok{"yjPower"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## yjPower Transformations to Multinormality 
+##        Est Power Rounded Pwr Wald Lwr Bnd Wald Upr Bnd
+## TrFFMC    2.0905        2.00       1.8008       2.3802
+## DMC       0.3221        0.33       0.2270       0.4171
+## DC        1.3926        1.39       1.1822       1.6029
+## ISI       0.0516        0.00      -0.1214       0.2247
+## temp      1.1356        1.00       0.8984       1.3729
+## RH        0.1952        0.00      -0.1064       0.4968
+## wind      0.3811        0.50       0.1109       0.6514
+## 
+##  Likelihood ratio test that all transformation parameters are equal to 0
+##                                        LRT df       pval
+## LR test, lambda = (0 0 0 0 0 0 0) 643.3795  7 < 2.22e-16
+\end{verbatim}
+
+Also, a regression tree suggests that \texttt{RH}, \texttt{DC},
+\texttt{ISI}, and the transformed \texttt{FFMC} variables may still be
+significant in predicting \texttt{Larea}. These may be worth adding to
+the MLR model one-at-a-time to see if a desirable level of \(R^2\) can
+be achieved (see figure on next page).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{require}\NormalTok{(tree)}
+\NormalTok{data.tree <-}\StringTok{ }\KeywordTok{tree}\NormalTok{(Larea}\OperatorTok{~}\NormalTok{., }\DataTypeTok{data=}\NormalTok{forest6[,}\DecValTok{6}\OperatorTok{:}\DecValTok{13}\NormalTok{],}\DataTypeTok{mincut=}\DecValTok{15}\NormalTok{, }\DataTypeTok{minsize=}\DecValTok{35}\NormalTok{)}
+\KeywordTok{plot}\NormalTok{(data.tree, }\DataTypeTok{type=}\StringTok{"uniform"}\NormalTok{)}
+\KeywordTok{text}\NormalTok{(data.tree)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{forestfires_Final_files/figure-latex/fig6-1} \end{center}
+
+\section*{Citations}\label{citations}
+\addcontentsline{toc}{section}{Citations}
+
+\hypertarget{refs}{}
+\hypertarget{ref-cortezff}{}
+Cortez, Paulo, and Anibal Morais. 2017. ``A Data Mining Approach to
+Predict Forest Fires Using Meteorological Data.'' Edited by J Neves, M F
+Santos, and J Machado. \emph{New Trends in Artificial Intelligence,
+Proceedings of the 13th EPIA 2007 - Portuguese Conference on Artificial
+Intelligence}, December. Guimaraes, Portugal, 512--23.
+\url{http://www.dsi.uminho.pt/~pcortez/fires.pdf}.
+
+
+\end{document}

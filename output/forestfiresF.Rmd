@@ -1,0 +1,130 @@
+---
+title: "Forest Fires"
+author: "Fernando Anorve"
+date: "19 de marzo de 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+require(car)
+``` 
+
+The following data is about forest fires, also known as wildfires. 
+
+The variables in the data are given by:
+
+   1. X - x-axis spatial coordinate within the Montesinho park map: 1 to 9
+   2. Y - y-axis spatial coordinate within the Montesinho park map: 2 to 9
+   3. month - month of the year: "jan" to "dec" 
+   4. day - day of the week: "mon" to "sun"
+   5. FFMC - FFMC index from the FWI system: 18.7 to 96.20
+   6. DMC - DMC index from the FWI system: 1.1 to 291.3 
+   7. DC - DC index from the FWI system: 7.9 to 860.6 
+   8. ISI - ISI index from the FWI system: 0.0 to 56.10
+   9. temp - temperature in Celsius degrees: 2.2 to 33.30
+   10. RH - relative humidity in %: 15.0 to 100
+   11. wind - wind speed in km/h: 0.40 to 9.40 
+   12. rain - outside rain in mm/m2 : 0.0 to 6.4 
+   13. area - the burned area of the forest (in ha): 0.00 to 1090.84 
+   (this output variable is very skewed towards 0.0, thus it may make
+    sense to model with the logarithm transform).
+
+## Exploratory Data Analysis
+
+After reading the data we can draw a plot matrix as a first step to look for any important trend.
+
+```{r}
+forest <-read.csv("forestfires.csv")
+pairs(forest,pch=18)
+```
+
+This graph shows that variables `DMC` and `DC` might be positively related, while `temp` and `RH` might be negatively related. This plot also shows that two `area` observations are particularly high and seem to be potentially influential. However, as many of the `area` data points are near zero, it would be convenient to study this variable with more detail. 
+
+````{r}
+hist(forest$area,main = "Wildfire Area",xlab = "Area")
+
+length(forest$area)
+
+summary(forest$area)
+length(which(forest$area == 0))
+```
+
+Interestingly, the `area` data is consierably skewed to the left, and at least one fourth of the data is zero. In fact, the total number of zero-values is 247.  This is explained by Cortez and Morais as a general trend with forest fire data observed in various locations: either the fires are extinguished quickly and burn less than $100m^2$ of area, or they are not easily contained and end up burning a large area. Fires that burn less than $100m^2$ of area are all catalogued as zero, which prevents us from doing a complete analysis on these type of fires. To face this problem we can apply the MLR model to the data conditioned to nonzero burn area only. The positive skewness suggests the need of a transformation. Trying log transformation seems suitable.
+
+```{r} 
+x <- which(forest$area > 0)
+forest2 <- forest[x,]
+forest2$area <- log(forest2$area)
+pairs(forest2,pch = 18)
+```
+
+As categorical data, the `month` variable can be divided into subsets defined by seasons. 
+
+```{r}
+plot(forest2$month ,forest2$area)
+``` 
+
+Redifining Jan, Feb, Mar as winter; Apr, May, Jun as spring; Jul, Aug, Sep as summer, and Oct, Nov, Dec as autumn we have:
+
+```{r, echo=F}
+
+week <- rep(0,length(forest2$day))
+
+week[which(forest2$day == "mon")] <- 0
+week[which(forest2$day == "tue")] <- 0
+week[which(forest2$day == "wed")] <- 0
+week[which(forest2$day == "thu")] <- 0
+week[which(forest2$day == "fri")] <- 0
+week[which(forest2$day == "sat")] <- 1
+week[which(forest2$day == "sun")] <- 1
+
+seas <- rep(0,length(forest2$month), ylab = "Area",
+     xlab = "Month",main = "Month Data")
+
+seas[which(forest2$month == "jan")] <- 0
+seas[which(forest2$month == "feb")] <- 0
+seas[which(forest2$month == "mar")] <- 0
+seas[which(forest2$month == "apr")] <- 1
+seas[which(forest2$month == "may")] <- 1
+seas[which(forest2$month == "jun")] <- 1
+seas[which(forest2$month == "jul")] <- 2
+seas[which(forest2$month == "aug")] <- 2
+seas[which(forest2$month == "sep")] <- 2
+seas[which(forest2$month == "oct")] <- 3
+seas[which(forest2$month == "nov")] <- 3
+seas[which(forest2$month == "dec")] <- 3
+
+forest2$week <- as.factor(week)
+forest2$season <- as.factor(seas)
+```
+``` {r}
+plot(forest2$season ,forest2$area, ylab = "Area",
+     xlab = "Season",main = "Seasonal Data",
+     names = c("Winter","Spring","Summer","Winter"))
+```
+
+The `day` variable can be divided into subsets "weekdays" and "weekends", since forest fires could be explained by exposure to human beings. 
+
+``` {r}
+plot(forest2$day ,forest2$area, ylab = "Area",
+     xlab = "Day",main = "Days")
+
+plot(forest2$week ,forest2$area, ylab = "Area",
+     xlab = "Day",main = "Days",
+     names = c("Weekdays","Weekends"))
+```
+
+Noticing that `FFMC` is negatively skewed, we can try to normalize it by reflecting it and applying a log transformation
+
+```{r}
+
+boxplot(forest4$FFMC,horizontal = T,
+        main = "FFMC boxplot", xlab = "FFMC")
+FFMC <- log(-forest4$FFMC+ max(forest4$FFMC)+1)
+plot(FFMC,forest4$area, xlab = "FFMC" , ylab = "Area",
+     main = "FFMC plot")
+```
