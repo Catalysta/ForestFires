@@ -126,57 +126,129 @@ cd<-cooks.distance(glm(large~.,dat=train4,family="binomial"))
 which(cd>qf(0.5,ncol(train2)+1,nrow(train2)-ncol(train2)-1)) #these look fine
 
 #use deviance as a measure instead
-#fill in algorithm
+#function for deviance calcs
+dev.distance<-function(dat,response,model){
+  n<-nrow(dat)
+  output<-data.frame(aic=numeric(),aic.dist=numeric(),dev=numeric(),dev.dist=numeric())
+  full.model<-glm(model$call, dat=dat, family = "binomial")
+  full.model.aic<-full.model$aic
+  full.model.dev<-full.model$deviance
+  for (i in 1:n){
+    temp<-dat[-i,]
+    oo.mod<-glm(model$call, dat=temp, family = "binomial")
+    output[i,1]<-oo.mod$aic
+    output[i,2]<-abs(output[i,1]-full.model.aic)
+    output[i,3]<-oo.mod$deviance
+    output[i,4]<-abs(output[i,3]-full.model.dev)
+  }
+  return(output)
+}
 
+#run function on train4
+model1<-glm(large~.,dat=train4,family="binomial")
+result<-dev.distance(train4,train4$large,model=model1)
+hist(result$aic.dist)
+hist(result$dev.dist)
+#get quantiles
+aic.q<-quantile(result$aic.dist,.99)
+dev.q<-quantile(result$dev.dist,.99)
+ind1<-which(result$aic.dist>aic.q)
+ind2<-which(result$dev.dist>dev.q)
+color<-ifelse(row.names(train4) %in% ind2, "red", "black")
+pairs(train4[,3:9],col=color)
+result[ind2,]
+
+#even though there are outliers relative to the rest of the data set, on a relative
+#scale these obervations do not appear to change the model very much
+#so even though visually the outlier in ISI looks bad, we have no analytical
+#justification for removing it.
+
+#pairs(train5[,3:9])
 #remove outlier
-train5<-train4[which(train3$ISI<40),]
-pairs(train5[,3:9])
+#train5<-train4[which(train3$ISI<40),]
+#pairs(train5[,3:9])
 
+#since the plots look good and box-cox does not suggest any further drastic transformations,
+#we proceed with variable selection
 require(car)
-summary(powerTransform(cbind(TrFFMC,DMC,DC,ISI,temp,RH,wind)~1,train5,family="yjPower"))
+summary(powerTransform(cbind(TrFFMC,DMC,DC,ISI,temp,RH,wind)~1,train4,family="yjPower"))
 
 ```
 
 ## Model Selection
 
 ```{r}
+fit0<-glm(large~1,dat=train4, family = binomial(link="logit"))
+fitfull<-glm(large~.,dat=train4, family = binomial(link="logit"))
 
-mylogit<-glm(formula = large ~ temp+RH+DC+ISI+DMC, family = "binomial", data = train2)
+# Forward selection
+step(fit0,scope=list(lower=fit0,upper=fitfull),direction="forward")
+
+# Backward elimination
+step(fitfull,scope=list(lower=fit0,upper=fitfull),direction="backward")
+
+# Stepwise regression
+step(fit0,scope=list(lower=fit0,upper=fitfull),direction="both")
+
+#compare resulting models
+model2<-glm(formula = large ~ month + temp, family = binomial(link = "logit"), 
+    data = train4)
+model3<-glm(formula = large ~ month + temp + RH + wind + rainbin, family = binomial(link = "logit"), 
+    data = train4)
+model4<-glm(formula = large ~ temp + RH + rainbin, family = binomial(link = "logit"), 
+    data = train4)
+
+
+anova(model2,model3)
+summary(model3)
+summary(model4)
+```
+
+```{r}
+#try LASSO
+require(glmnet)
+
+```
+
+
+```{r}
+
+mylogit<-glm(formula = large ~ temp+RH+DC+ISI+DMC, family = "binomial", data = train5)
 summary(mylogit)
 
 
-mylogit<-glm(formula = large ~ XY+week+season+rain+
-               wind+FFMC+temp+RH+DC+ISI+DMC,
-             family = "binomial", data = train2)
-summary(mylogit)
+#mylogit<-glm(formula = large ~ XY+week+season+rain+
+#               wind+FFMC+temp+RH+DC+ISI+DMC,
+#             family = "binomial", data = train5)
+#summary(mylogit)
 
 
-mylogit<-glm(formula = large ~ XY+week+season+rainbin+
-               wind+FFMC+temp+RH+DC+ISI+DMC,
-             family = "binomial", data = train2)
-summary(mylogit)
+#mylogit<-glm(formula = large ~ XY+week+season+rainbin+
+#               wind+FFMC+temp+RH+DC+ISI+DMC,
+#             family = "binomial", data = train5)
+#summary(mylogit)
 
 
-mylogit<-glm(formula = large ~ week+season+rainbin+
-               wind+FFMC+temp+RH+DC+ISI+DMC,
-             family = "binomial", data = train2)
-summary(mylogit)
+#mylogit<-glm(formula = large ~ week+season+rainbin+
+#               wind+FFMC+temp+RH+DC+ISI+DMC,
+#             family = "binomial", data = train5)
+#summary(mylogit)
 
 
-mylogit<-glm(formula = large ~ week+season+rain+
-               wind+FFMC+temp+RH+DC+ISI+DMC,
-             family = "binomial", data = train2)
-summary(mylogit)
+#mylogit<-glm(formula = large ~ week+season+rain+
+#               wind+FFMC+temp+RH+DC+ISI+DMC,
+#             family = "binomial", data = train5)
+#summary(mylogit)
 
 
-mylogit<-glm(formula = large ~ season+rainbin+
-               wind+FFMC+temp+RH+DC+ISI+DMC,
-             family = "binomial", data = train2)
-summary(mylogit)
+#mylogit<-glm(formula = large ~ season+rainbin+
+#               wind+FFMC+temp+RH+DC+ISI+DMC,
+#             family = "binomial", data = train5)
+#summary(mylogit)
 
 
 mylogit<-glm(formula = large ~ wind+rainbin,
-             family = "binomial", data = train2)
+             family = "binomial", data = train5)
 summary(mylogit)
 
 ```
