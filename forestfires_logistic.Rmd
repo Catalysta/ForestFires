@@ -110,21 +110,31 @@ train2<-forest9[indices,]
 test2<-forest9[-indices,]
 
 train3<-train2[,c(-(1:3),-13,-(15:17))]
-View(train3)
 
 #view continuous predictors
 pairs(train3[,3:9])
 
-
 #transform FFMC
-train2$FFMC <- log(-train2$FFMC+ max(train2$FFMC)+1)
-colnames(train2)[6]<-"TrFFMC"
+train4<-train3
+train4$FFMC <- log(-train4$FFMC+ max(train4$FFMC)+1)
+colnames(train4)[3]<-"TrFFMC"
 
-
+pairs(train4[,3:9])
 
 #check cook's distances
-cd<-cooks.distance(glm(large~.,dat=train2,family="binomial"))
-which(cd>qf(0.5,ncol(train2)+1,nrow(train2)-ncol(train2)-1)) #these also look fine
+cd<-cooks.distance(glm(large~.,dat=train4,family="binomial"))
+which(cd>qf(0.5,ncol(train2)+1,nrow(train2)-ncol(train2)-1)) #these look fine
+
+#use deviance as a measure instead
+#fill in algorithm
+
+#remove outlier
+train5<-train4[which(train3$ISI<40),]
+pairs(train5[,3:9])
+
+require(car)
+summary(powerTransform(cbind(TrFFMC,DMC,DC,ISI,temp,RH,wind)~1,train5,family="yjPower"))
+
 ```
 
 ## Model Selection
