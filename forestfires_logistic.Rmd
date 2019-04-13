@@ -12,7 +12,7 @@ output: html_document
 The variables in the data are given by:
 
    1. **X** *(nominal)*: x-axis spatial coordinate within the Montesinho park map: 1 to 9
-   2. **Y** *(nominal)*: y-axis spatial coordinate within the Montesinho park map: 2 to 9
+   2. **Y** *(nominal)*: y-axis spatiFal coordinate within the Montesinho park map: 2 to 9
    3. **month** *(nominal)*: month of the year: "jan" to "dec" 
    4. **day** *(nominal)*: day of the week: "mon" to "sun"
    5. **FFMC** *(ordinal, continuous)*: FFMC index from the FWI system: 18.7 to 96.20
@@ -120,6 +120,9 @@ pairs(train3[,3:9])
 train2$FFMC <- log(-train2$FFMC+ max(train2$FFMC)+1)
 colnames(train2)[6]<-"TrFFMC"
 
+
+#view continuous predictors TrFFMC
+pairs(train2[,c(6:12)])
 
 
 #check cook's distances
