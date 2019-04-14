@@ -101,7 +101,7 @@ pairs(forest9[,c(-2,-3,-4,-5)])
 ```
 
 ```{r}
-#split training and testing set
+#split training and testing set, using approximately 75/25 ratio train/test
 
 set.seed(6950)
 
@@ -191,17 +191,21 @@ step(fitfull,scope=list(lower=fit0,upper=fitfull),direction="backward")
 step(fit0,scope=list(lower=fit0,upper=fitfull),direction="both")
 
 #compare resulting models
-model2<-glm(formula = large ~ month + temp, family = binomial(link = "logit"), 
+fw.model<-glm(formula = large ~ month + temp, family = binomial(link = "logit"), 
     data = train4)
-model3<-glm(formula = large ~ month + temp + RH + wind + rainbin, family = binomial(link = "logit"), 
-    data = train4)
-model4<-glm(formula = large ~ temp + RH + rainbin, family = binomial(link = "logit"), 
+stepwise.model<-glm(formula = large ~ month + temp + RH + wind + rainbin, family = binomial(link = "logit"), 
     data = train4)
 
+summary(fw.model)
+summary(stepwise.model) #this model looks better in terms of deviance
 
-anova(model2,model3)
-summary(model3)
-summary(model4)
+#perform chi-squared test
+stat<-fw.model$deviance-stepwise.model$deviance
+qchisq(.95,2)
+#[1] 5.991465
+stat
+#[1] 6.643096 #Hence adding the variables in the stepwise model significantly improves performance in terms of deviance
+
 ```
 
 ```{r, warning = F, message=F}
@@ -210,19 +214,31 @@ require(glmnet)
 X<-model.matrix(large~.-1,data=train4)
 y<-train4$large
 
-cvfit=cv.glmnet(X, y, family = "binomial") #defaults to 10-fold cross validation per documentation
-plot(cvfit)
-coef(cvfit, s = "lambda.min")
+cvfit1<-cv.glmnet(X, y, family = "binomial") #defaults to 10-fold cross validation per documentation
+plot(cvfit1)
+coef(cvfit1, s = "lambda.min")
+
+cvfit2<-cv.glmnet(X, y, family = "binomial") #defaults to 10-fold cross validation per documentation
+plot(cvfit2)
+coef(cvfit2, s = "lambda.1se")
+
+cvfit3<-cv.glmnet(X, y, family = "binomial", nfolds=5)
+plot(cvfit3)
+coef(cvfit3, s = "lambda.min")
+
+cvfit4<-cv.glmnet(X, y, family = "binomial", nfolds=5)
+plot(cvfit4)
+coef(cvfit4, s = "lambda.1se")
 
 fit.lasso<-glmnet(X,y,alpha=1, family="binomial")
 plot(fit.lasso,xvar="lambda",label=TRUE)
 
-#exclude months and see what LASSO says
+#exclude month and day  and see what LASSO says
 X2<-model.matrix(large~TrFFMC+DMC+DC+ISI+temp+RH+wind+rainbin-1,data=train4)
 
-cvfit2<-cv.glmnet(X2, y, family = "binomial") #defaults to 10-fold cross validation per documentation
-plot(cvfit2)
-coef(cvfit2, s = "lambda.min")
+cvfit5<-cv.glmnet(X2, y, family = "binomial") #defaults to 10-fold cross validation per documentation
+plot(cvfit5)
+coef(cvfit5, s = "lambda.min")
 
 fit.lasso2<-glmnet(X2,y,alpha=1, family="binomial")
 plot(fit.lasso2,xvar="lambda",label=TRUE)
@@ -230,19 +246,19 @@ plot(fit.lasso2,xvar="lambda",label=TRUE)
 #exclude months and DC and see what LASSO says
 X3<-model.matrix(large~TrFFMC+DMC+ISI+temp+RH+wind+rainbin-1,data=train4)
 
-cvfit3<-cv.glmnet(X3, y, family = "binomial") #defaults to 10-fold cross validation per documentation
-plot(cvfit3)
-coef(cvfit3, s = "lambda.min")
+cvfit6<-cv.glmnet(X3, y, family = "binomial") #defaults to 10-fold cross validation per documentation
+plot(cvfit6)
+coef(cvfit6, s = "lambda.min")
 
 fit.lasso3<-glmnet(X3,y,alpha=1, family="binomial")
 plot(fit.lasso3,xvar="lambda",label=TRUE)
 
-#exclude months and DC and see what LASSO says
+#exclude month, day and DMC and see what LASSO says
 X4<-model.matrix(large~TrFFMC+DC+ISI+temp+RH+wind+rainbin-1,data=train4)
 
-cvfit4<-cv.glmnet(X4, y, family = "binomial") #defaults to 10-fold cross validation per documentation
-plot(cvfit4)
-coef(cvfit4, s = "lambda.min")
+cvfit7<-cv.glmnet(X4, y, family = "binomial") #defaults to 10-fold cross validation per documentation
+plot(cvfit7)
+coef(cvfit7, s = "lambda.min")
 
 fit.lasso4<-glmnet(X4,y,alpha=1, family="binomial")
 plot(fit.lasso4,xvar="lambda",label=TRUE)
