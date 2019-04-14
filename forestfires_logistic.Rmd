@@ -209,59 +209,55 @@ stat
 ```
 
 ```{r, warning = F, message=F}
-#try LASSO
+#LASSO with everything in
 require(glmnet)
 X<-model.matrix(large~.-1,data=train4)
 y<-train4$large
-
-cvfit1<-cv.glmnet(X, y, family = "binomial") #defaults to 10-fold cross validation per documentation
-plot(cvfit1)
-coef(cvfit1, s = "lambda.min")
-
-cvfit2<-cv.glmnet(X, y, family = "binomial") #defaults to 10-fold cross validation per documentation
-plot(cvfit2)
-coef(cvfit2, s = "lambda.1se")
 
 cvfit3<-cv.glmnet(X, y, family = "binomial", nfolds=5)
 plot(cvfit3)
 coef(cvfit3, s = "lambda.min")
 
-cvfit4<-cv.glmnet(X, y, family = "binomial", nfolds=5)
-plot(cvfit4)
-coef(cvfit4, s = "lambda.1se")
-
 fit.lasso<-glmnet(X,y,alpha=1, family="binomial")
 plot(fit.lasso,xvar="lambda",label=TRUE)
 
-#exclude month and day  and see what LASSO says
+#Fit Ridge
+cvfit.ridge<-cv.glmnet(X, y, family = "binomial", nfolds=5, alpha = 0)
+plot(cvfit.ridge)
+coef(cvfit.ridge, s = "lambda.min")
+
+fit.ridge<-glmnet(X,y,alpha=0, family="binomial")
+plot(fit.ridge,xvar="lambda",label=TRUE)
+
+#Fit Elastic Net
+cvfit.elastic<-cv.glmnet(X, y, family = "binomial", nfolds=5, alpha = 0.5)
+plot(cvfit.elastic)
+coef(cvfit.elastic, s = "lambda.min")
+
+fit.elastic<-glmnet(X,y,alpha=0.5, family="binomial")
+plot(fit.elastic,xvar="lambda",label=TRUE)
+
+
+#exclude month and day and see what LASSO says
 X2<-model.matrix(large~TrFFMC+DMC+DC+ISI+temp+RH+wind+rainbin-1,data=train4)
 
-cvfit5<-cv.glmnet(X2, y, family = "binomial") #defaults to 10-fold cross validation per documentation
+cvfit5<-cv.glmnet(X2, y, family = "binomial", nfolds=5)
 plot(cvfit5)
 coef(cvfit5, s = "lambda.min")
 
 fit.lasso2<-glmnet(X2,y,alpha=1, family="binomial")
 plot(fit.lasso2,xvar="lambda",label=TRUE)
 
-#exclude months and DC and see what LASSO says
-X3<-model.matrix(large~TrFFMC+DMC+ISI+temp+RH+wind+rainbin-1,data=train4)
-
-cvfit6<-cv.glmnet(X3, y, family = "binomial") #defaults to 10-fold cross validation per documentation
-plot(cvfit6)
-coef(cvfit6, s = "lambda.min")
-
-fit.lasso3<-glmnet(X3,y,alpha=1, family="binomial")
-plot(fit.lasso3,xvar="lambda",label=TRUE)
-
 #exclude month, day and DMC and see what LASSO says
 X4<-model.matrix(large~TrFFMC+DC+ISI+temp+RH+wind+rainbin-1,data=train4)
 
-cvfit7<-cv.glmnet(X4, y, family = "binomial") #defaults to 10-fold cross validation per documentation
+cvfit7<-cv.glmnet(X4, y, family = "binomial", nfolds = 5) 
 plot(cvfit7)
 coef(cvfit7, s = "lambda.min")
 
 fit.lasso4<-glmnet(X4,y,alpha=1, family="binomial")
 plot(fit.lasso4,xvar="lambda",label=TRUE)
+
 
 ```
 
