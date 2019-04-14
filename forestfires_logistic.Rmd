@@ -207,9 +207,48 @@ summary(model3)
 summary(model4)
 ```
 
-```{r}
+```{r, warning = F, message=F}
 #try LASSO
 require(glmnet)
+X<-model.matrix(large~.-1,data=train4)
+y<-train4$large
+
+cvfit=cv.glmnet(X, y, family = "binomial") #defaults to 10-fold cross validation per documentation
+plot(cvfit)
+coef(cvfit, s = "lambda.min")
+
+fit.lasso<-glmnet(X,y,alpha=1, family="binomial")
+plot(fit.lasso,xvar="lambda",label=TRUE)
+
+#exclude months and see what LASSO says
+X2<-model.matrix(large~TrFFMC+DMC+DC+ISI+temp+RH+wind+rainbin-1,data=train4)
+
+cvfit2<-cv.glmnet(X2, y, family = "binomial") #defaults to 10-fold cross validation per documentation
+plot(cvfit2)
+coef(cvfit2, s = "lambda.min")
+
+fit.lasso2<-glmnet(X2,y,alpha=1, family="binomial")
+plot(fit.lasso2,xvar="lambda",label=TRUE)
+
+#exclude months and DC and see what LASSO says
+X3<-model.matrix(large~TrFFMC+DMC+ISI+temp+RH+wind+rainbin-1,data=train4)
+
+cvfit3<-cv.glmnet(X3, y, family = "binomial") #defaults to 10-fold cross validation per documentation
+plot(cvfit3)
+coef(cvfit3, s = "lambda.min")
+
+fit.lasso3<-glmnet(X3,y,alpha=1, family="binomial")
+plot(fit.lasso3,xvar="lambda",label=TRUE)
+
+#exclude months and DC and see what LASSO says
+X4<-model.matrix(large~TrFFMC+DC+ISI+temp+RH+wind+rainbin-1,data=train4)
+
+cvfit4<-cv.glmnet(X4, y, family = "binomial") #defaults to 10-fold cross validation per documentation
+plot(cvfit4)
+coef(cvfit4, s = "lambda.min")
+
+fit.lasso4<-glmnet(X4,y,alpha=1, family="binomial")
+plot(fit.lasso4,xvar="lambda",label=TRUE)
 
 ```
 
