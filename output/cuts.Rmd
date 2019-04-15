@@ -28,3 +28,53 @@ We generate a correlation matrix to check for linear dependence. It appears that
 ```{r}
 cor(forest5[,c(5:11,14)])
 ```
+
+
+```{r}
+require(car)
+summary(powerTransform(cbind(TrFFMC,DMC,DC,ISI,temp,RH,wind)~1,train,family="yjPower"))
+yj.TrFFMC<-yjPower(train$TrFFMC,2.5)
+yj.DMC<-yjPower(train$DMC,.33)
+yj.DC<-yjPower(train$DC,1.5)
+yj.ISI<-yjPower(train$ISI,0)
+yj.RH<-yjPower(train$RH,0)
+yj.wind<-yjPower(train$wind,0.5)
+
+train2<-cbind(train[,-c(6:9,11:12,16:85)],yj.TrFFMC,yj.DMC,yj.DC,yj.ISI,yj.RH,yj.wind)
+
+```
+
+
+
+```{r}
+#try forward/backward selection on the augmented data
+fit0<-lm(Larea~1,dat=train2)
+fitfull<-lm(Larea~.,dat=train2)
+
+# Forward selection
+step(fit0,scope=list(lower=fit0,upper=fitfull),direction="forward")
+
+# Backward elimination
+step(fitfull,scope=list(lower=fit0,upper=fitfull),direction="backward")
+
+# Stepwise regression
+step(fit0,scope=list(lower=fit0,upper=fitfull),direction="both")
+```
+
+```{r}
+fwd.yj.model<-lm(formula = Larea ~ yj.ISI + yj.RH + week + yj.TrFFMC + temp, 
+    data = train2)
+summary(fwd.yj.model)
+
+bwd.yj.model<-lm(formula = Larea ~ month + yj.DMC + yj.DC + yj.ISI + yj.RH, 
+    data = train2)
+summary(bwd.yj.model)
+
+stepwise.regression.model<-lm(formula = Larea ~ yj.ISI + yj.RH + week + yj.TrFFMC + temp, 
+    data = train2)
+summary(stepwise.regression.model)
+```
+
+
+
+

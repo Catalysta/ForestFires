@@ -7,7 +7,7 @@ output: html_document
 
 Subset the data to train the model, reserving 1/4 for validation. Use same indices as those used in logistic regression.
 
-```{r}
+```{r vif}
 #please run all chunks from EDA prior to running this document.
 
 #Check VIF since data appears to present with high multicollinearity
@@ -35,7 +35,7 @@ which(cd>qf(0.5,ncol(forest6)+1,nrow(forest6)-ncol(forest6)-1)) #these also look
 ```
 
 
-```{r}
+```{r augment}
 
 #add quadratic, cubic, and interaction terms
 quad<-(forest6[,6:12])^2
@@ -78,7 +78,7 @@ colnames(three.way.interaction)<-labels
 forest6.augmented<-cbind(forest6,quad,cubic,two.way.interaction,three.way.interaction)
 ```
 
-```{r}
+```{r split}
 set.seed(6950)
 indices<-sample(1:270,203)
 train<-forest6.augmented[indices,]
@@ -88,7 +88,7 @@ pairs(train[,6:13])
 
 
 
-```{r}
+```{r LASSO}
 
 #try LASSO on augmented prediction set
 require(glmnet)
@@ -102,11 +102,24 @@ coef(cvfit, s = "lambda.min")
 fit.lasso<-glmnet(X,y,alpha=1)
 plot(fit.lasso,xvar="lambda",label=TRUE)
 
+#try leaving out Spatial and Temporal predictors
+X<-model.matrix(Larea~.-1,data=train[,c(6:13,16:85)])
+y<-train$Larea
+
+cvfit2<-cv.glmnet(X, y, nfolds=5)
+plot(cvfit2)
+coef(cvfit2, s = "lambda.min")
+
+fit.lasso2<-glmnet(X,y,alpha=1)
+plot(fit.lasso2,xvar="lambda",label=TRUE)
+
+yhat<-predict(cvfit2,X,s="lambda.min")
+mean((y-yhat)^2)
 ```
 
 Since p is small, we enumerate full model space using `leaps` package.
 
-```{r}
+```{r regsub}
 require(leaps)
 y<-train$Larea
 X<-train[,c(1:12,14:15)]
@@ -125,14 +138,92 @@ sum.reg
 
 `DMC` appears to be least important, while `month` and `day` appear to be important. R^2 is extremely low. This data simply does not seem to predict `Larea` very well.
 
-```{r}
+```{r plot regsub}
 par(mfrow=c(1,3))
 plot(regsubsets.out, scale = "r2", main = "R^2",cex.axis=2,cex.lab=2,cex=2)
 plot(regsubsets.out, scale = "adjr2", main = "Adjusted R^2",cex.axis=2,cex.lab=2,cex=2)
 plot(regsubsets.out, scale = "Cp", main = "Mallow's Cp",cex.axis=2,cex.lab=2,cex=2)
 ```
 
+```{r select1}
+#try forward/backward selection on the augmented data
+fit0<-lm(Larea~1,dat=train)
+fitfull<-lm(Larea~.,dat=train)
+
+# Forward selection
+step(fit0,scope=list(lower=fit0,upper=fitfull),direction="forward")
+
+# Backward elimination
+step(fitfull,scope=list(lower=fit0,upper=fitfull),direction="backward")
+
+# Stepwise regression
+step(fit0,scope=list(lower=fit0,upper=fitfull),direction="both")
+```
+
+```{r select1mod}
+fwd.model<-lm(formula = Larea ~ ISI:temp:RH + DMC:ISI + TrFFMC:DMC:ISI + 
+    week, data = train)
+summary(fwd.model)
+
+bwd.model<-lm(formula = Larea ~ XY + month + day + TrFFMC + DMC + temp + 
+    RH + wind + `TrFFMC ^2` + `DC ^2` + `RH ^2` + `wind ^2` + 
+    `TrFFMC ^3` + `DC ^3` + `ISI ^3` + `RH ^3` + `TrFFMC*DMC` + 
+    `TrFFMC*DC` + `TrFFMC*ISI` + `TrFFMC*temp` + `TrFFMC*RH` + 
+    `TrFFMC*wind` + `DMC*DC` + `DMC*ISI` + `DMC*temp` + `DMC*RH` + 
+    `DMC*wind` + `DC*temp` + `DC*wind` + `ISI*temp` + `ISI*wind` + 
+    `temp*RH` + `temp*wind` + `RH*wind` + `TrFFMC*DMC*DC` + `TrFFMC*DMC*temp` + 
+    `TrFFMC*DC*ISI` + `TrFFMC*DC*temp` + `TrFFMC*DC*RH` + `TrFFMC*DC*wind` + 
+    `TrFFMC*ISI*temp` + `TrFFMC*ISI*RH` + `TrFFMC*temp*RH` + 
+    `TrFFMC*temp*wind` + `TrFFMC*RH*wind` + `DMC*DC*ISI` + `DMC*DC*RH` + 
+    `DMC*ISI*wind` + `DMC*temp*RH` + `DMC*temp*wind` + `DMC*RH*wind` + 
+    `DC*ISI*temp` + `DC*ISI*wind` + `DC*temp*RH` + `ISI*temp*RH` + 
+    `ISI*temp*wind` + `ISI*RH*wind`, data = train)
+summary(bwd.model)
+
+stepwise.model<-lm(formula = Larea ~ ISI:temp:RH + DMC:ISI + TrFFMC:DMC:ISI + 
+    week, data = train)
+summary(stepwise.model)
+
+```
 
 
+```{r select2, echo=F}
+#try forward/backward selection, augmented, leave out Spatial/Temporal predictors.
+fit0<-lm(Larea~1,dat=train[,c(6:13,16:85)])
+fitfull<-lm(Larea~.,dat=train[,c(6:13,16:85)])
+
+# Forward selection
+step(fit0,scope=list(lower=fit0,upper=fitfull),direction="forward")
+
+# Backward elimination
+step(fitfull,scope=list(lower=fit0,upper=fitfull),direction="backward")
+
+# Stepwise regression
+step(fit0,scope=list(lower=fit0,upper=fitfull),direction="both")
+```
 
 
+```{r select2mod}
+fwd.weather.model<-lm(formula = Larea ~ ISI:temp:RH + DMC:ISI + TrFFMC:DMC:ISI, 
+    data = train[, c(6:13, 16:85)])
+summary(fwd.weather.model)
+
+fwd.weather.model.hierarchy<-lm(formula = Larea ~ ISI+temp+RH+DMC+TrFFMC+ISI:temp+temp:RH+ISI:RH+ISI:temp:RH + DMC:ISI + TrFFMC:DMC + TrFFMC:ISI+ TrFFMC:DMC:ISI, 
+    data = train[, c(6:13, 16:85)])
+summary(fwd.weather.model.hierarchy)
+
+bwd.weather.model<-lm(formula = Larea ~ TrFFMC + DMC + wind + `TrFFMC ^2` + `DC ^2` + 
+    `ISI ^2` + `RH ^2` + `TrFFMC ^3` + `DC ^3` + `RH ^3` + `TrFFMC*DMC` + 
+    `TrFFMC*DC` + `TrFFMC*ISI` + `TrFFMC*RH` + `TrFFMC*wind` + 
+    `DMC*DC` + `DMC*ISI` + `DMC*temp` + `DMC*wind` + `DC*ISI` + 
+    `DC*temp` + `DC*wind` + `ISI*temp` + `ISI*wind` + `temp*wind` + 
+    `TrFFMC*DC*temp` + `TrFFMC*DC*wind` + `TrFFMC*ISI*temp` + 
+    `TrFFMC*ISI*RH` + `TrFFMC*temp*RH` + `TrFFMC*RH*wind` + `DMC*DC*temp` + 
+    `DMC*ISI*temp` + `DMC*temp*wind` + `DC*ISI*temp` + `DC*ISI*RH` + 
+    `DC*ISI*wind` + `DC*temp*RH` + `temp*RH*wind`, data = train[, 
+    c(6:13, 16:85)])
+summary(bwd.weather.model)
+
+stepwise.weather.model<-lm(formula = Larea ~ `ISI*temp*RH` + `DMC*ISI` + `TrFFMC*DMC*ISI`, 
+    data = train[, c(6:13, 16:85)])
+```
