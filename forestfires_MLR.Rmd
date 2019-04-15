@@ -5,6 +5,8 @@ date: "April 3, 2019"
 output: html_document
 ---
 
+Subset the data to train the model, reserving 1/4 for validation. Use same indices as those used in logistic regression.
+
 ```{r}
 #please run all chunks from EDA prior to running this document.
 
@@ -32,14 +34,82 @@ which(cd>qf(0.5,ncol(forest6)+1,nrow(forest6)-ncol(forest6)-1)) #these also look
 
 ```
 
-Since remaining diagnostics look OK, proceed with variable selection.
+
+```{r}
+
+#add quadratic, cubic, and interaction terms
+quad<-(forest6[,6:12])^2
+labels.quad<-colnames(forest6[,6:12])
+labels.quad<-paste(labels.quad,"^2")
+colnames(quad)<-labels.quad
+cubic<-(forest6[,6:12])^3
+labels.cubic<-colnames(forest6[,6:12])
+labels.cubic<-paste(labels.cubic,"^3")
+colnames(cubic)<-labels.cubic
+
+two.way.interaction<-matrix(nrow=nrow(forest6),ncol=21)
+labels2<-vector()
+#create interaction terms
+k=1
+for(i in 6:11){
+  for (j in (i+1):12){
+    two.way.interaction[,k]<-forest6[,i]*forest6[,j]
+    labels2[k]<-paste(colnames(forest6)[i],colnames(forest6)[j], sep = "*")
+    k<-(k+1)
+  }
+}
+colnames(two.way.interaction)<-labels2
+
+three.way.interaction<-matrix(nrow=nrow(forest6),ncol=35)
+labels<-vector()
+#create interaction terms
+m=1
+for(i in 6:10){
+  for (j in (i+1):11){
+    for (k in (j+1):12){
+      three.way.interaction[,m]<-forest6[,i]*forest6[,j]*forest6[,k]
+      labels[m]<-paste(colnames(forest6)[i],colnames(forest6)[j],colnames(forest6)[k], sep = "*")
+      m<-(m+1)
+    }
+  }
+}
+colnames(three.way.interaction)<-labels
+
+forest6.augmented<-cbind(forest6,quad,cubic,two.way.interaction,three.way.interaction)
+```
+
+```{r}
+set.seed(6950)
+indices<-sample(1:270,203)
+train<-forest6.augmented[indices,]
+test<-forest6.augmented[-indices,]
+pairs(train[,6:13])
+```
+
+
+
+```{r}
+
+#try LASSO on augmented prediction set
+require(glmnet)
+X<-model.matrix(Larea~.-1,data=train)
+y<-train$Larea
+
+cvfit<-cv.glmnet(X, y, nfolds=5)
+plot(cvfit)
+coef(cvfit, s = "lambda.min")
+
+fit.lasso<-glmnet(X,y,alpha=1)
+plot(fit.lasso,xvar="lambda",label=TRUE)
+
+```
 
 Since p is small, we enumerate full model space using `leaps` package.
 
 ```{r}
 require(leaps)
-y<-forest6$Larea
-X<-forest6[,c(1:12,14:15)]
+y<-train$Larea
+X<-train[,c(1:12,14:15)]
 regsubsets.out=regsubsets(y ~ X,
 			   data = as.data.frame(cbind(y,X)),
                nbest = 2,       # 2 best models for each number of predictors
@@ -62,13 +132,7 @@ plot(regsubsets.out, scale = "adjr2", main = "Adjusted R^2",cex.axis=2,cex.lab=2
 plot(regsubsets.out, scale = "Cp", main = "Mallow's Cp",cex.axis=2,cex.lab=2,cex=2)
 ```
 
-Subset the data to train the model, reserving 1/4 for validation
-```{r}
-set.seed(6950)
-indices<-sample(1:270,202)
-train<-forest6[indices,]
-test<-forest6[-indices,]
-```
+
 
 
 
