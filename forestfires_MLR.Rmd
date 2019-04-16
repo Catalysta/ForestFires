@@ -7,33 +7,6 @@ output: html_document
 
 Subset the data to train the model, reserving 1/4 for validation. Use same indices as those used in logistic regression.
 
-```{r vif}
-#please run all chunks from EDA prior to running this document.
-
-#Check VIF since data appears to present with high multicollinearity
-
-#set up regression models
-
-cts.pred<-forest6[,6:12]
-q<-ncol(cts.pred)
-r2k<-numeric(q)
-for (i in 1:q){
-  formula<-as.formula(paste(colnames(cts.pred)[i],"~."))
-  model<-lm(formula,data = cts.pred)
-  r2k[i]<-summary(model)$r.squared
-}
-vifk<-1/(1-r2k)
-vifk #these actually don't look too bad (but not great either)
-
-#regress DMC on DC
-summary(lm(DMC~DC, dat=forest6))$r.squared #actually not too bad, ok to leave in.
-
-#check cook's distances
-cd<-cooks.distance(lm(Larea~.,dat=forest6))
-which(cd>qf(0.5,ncol(forest6)+1,nrow(forest6)-ncol(forest6)-1)) #these also look fine
-
-```
-
 
 ```{r augment}
 
@@ -86,6 +59,34 @@ test<-forest6.augmented[-indices,]
 pairs(train[,6:13])
 ```
 
+```{r vif}
+#please run all chunks from EDA prior to running this document.
+
+#Check VIF since data appears to present with high multicollinearity
+
+#set up regression models
+
+cts.pred<-train[,6:12]
+q<-ncol(cts.pred)
+r2k<-numeric(q)
+for (i in 1:q){
+  formula<-as.formula(paste(colnames(cts.pred)[i],"~."))
+  model<-lm(formula,data = cts.pred)
+  r2k[i]<-summary(model)$r.squared
+}
+vifk<-1/(1-r2k)
+vifk #these actually don't look too bad (but not great either)
+
+#regress DMC on DC
+summary(lm(DMC~DC, dat=train))$r.squared #actually not too bad, ok to leave in.
+
+#check cook's distances
+cd<-cooks.distance(lm(Larea~.,dat=train))
+which(cd>qf(0.5,ncol(train)+1,nrow(train)-ncol(train)-1)) #these also look fine
+boxplot(cd, main = "Cooks Distance (MLR)")
+#abline(v=qf(0.5,ncol(train)+1,nrow(train)-ncol(train)-1))
+
+```
 
 
 ```{r LASSO}
@@ -224,6 +225,27 @@ bwd.weather.model<-lm(formula = Larea ~ TrFFMC + DMC + wind + `TrFFMC ^2` + `DC 
     c(6:13, 16:85)])
 summary(bwd.weather.model)
 
+
 stepwise.weather.model<-lm(formula = Larea ~ `ISI*temp*RH` + `DMC*ISI` + `TrFFMC*DMC*ISI`, 
     data = train[, c(6:13, 16:85)])
+summary(stepwise.weather.model)
+
+yhat3<-predict(fwd.weather.model,X=train[,c(6:13,16:85)])
+mean((y-yhat3)^2)
+yhat2<-predict(bwd.weather.model,X=train[,c(6:13,16:85)])
+mean((y-yhat2)^2)
+yhat4<-predict(stepwise.weather.model,X=train[,c(6:13,16:85)])
+mean((y-yhat4)^2)
+```
+
+Use the weather variable model arising from backward selection as it achieves the highest adjusted R^2 and lowest MSE. Check diagnostics
+
+```{r diagnostics}
+resids<-resid(bwd.weather.model)
+plot(train$Larea, resids, main = "Fitted Values versus Residuals, MLR")
+abline(h=0)
+
+qqnorm(resids)
+qqline(resids, col="blue")
+
 ```
