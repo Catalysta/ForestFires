@@ -230,10 +230,11 @@ stepwise.weather.model<-lm(formula = Larea ~ `ISI*temp*RH` + `DMC*ISI` + `TrFFMC
     data = train[, c(6:13, 16:85)])
 summary(stepwise.weather.model)
 
+y<-train$Larea
 yhat3<-predict(fwd.weather.model,X=train[,c(6:13,16:85)])
 mean((y-yhat3)^2)
 yhat2<-predict(bwd.weather.model,X=train[,c(6:13,16:85)])
-mean((y-yhat2)^2)
+in.sample.MSE.bwd.weather.model<-mean((y-yhat2)^2)
 yhat4<-predict(stepwise.weather.model,X=train[,c(6:13,16:85)])
 mean((y-yhat4)^2)
 ```
@@ -242,10 +243,30 @@ Use the weather variable model arising from backward selection as it achieves th
 
 ```{r diagnostics}
 resids<-resid(bwd.weather.model)
-plot(train$Larea, resids, main = "Fitted Values versus Residuals, MLR")
+fitted.vals<-fitted(bwd.weather.model)
+plot(fitted.vals, resids, main = "Fitted Values versus Residuals, MLR")
 abline(h=0)
 
 qqnorm(resids)
 qqline(resids, col="blue")
+
+```
+
+```{r testing}
+#get test performance
+y<-test$Larea
+yhat4<-predict(bwd.weather.model,newdata=test[,c(6:13,16:85)])
+pred.MSE.bwd.weather.model<-mean((y-yhat4)^2)
+in.sample.MSE.bwd.weather.model
+pred.MSE.bwd.weather.model #suggests that model is overfit
+
+#check test performace for mean model
+mean.model<-mean(train$Larea)
+in.sample.MSE.mean.model<-mean((train$Larea-rep(mean(train$Larea,203)))^2)
+yhat5<-rep(mean(train$Larea),67)
+pred.MSE.mean.model<-mean((y-yhat5)^2)
+
+in.sample.MSE.mean.model
+pred.MSE.mean.model
 
 ```
