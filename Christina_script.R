@@ -7,9 +7,7 @@ forest <-read.csv("forestfires.csv")
 set.seed(6950)
 indices<-sample(1:517,388)
 forest<-forest[indices,]
-test<-forest[-indices,]
-
-attach(forest)
+testdat<-forest[-indices,]
 
 #split fires into burn area categories as defined by Ozbayoglu, Bozer
 #1.32, 63.86, 273.05, 773.17
@@ -30,10 +28,7 @@ levels(forest$nonzero) <- c("zero","nonzero")
 forest$Larea<-log(forest$area + 1)
 
 #put area and Larea variables at start of data set
-forest<-cbind(forest$area,forest$Larea,forest[,5:11],forest[,c(1:4,12,14:16)])
-#change X and Y to factor variables
-forest$X<-as.factor(forest$X)
-forest$Y<-as.factor(forest$Y)
+forest<-cbind(forest$area,forest$Larea,forest[,5:11],forest[,c(3,4,12,14:16)])
 #change rain to binomial variable
 forest$rain<-ifelse(forest$rain>0,1,0)
 forest$rain<-as.factor(forest$rain)
@@ -55,8 +50,8 @@ plot(forest[,2:9])
 cor(forest[,2:9])
 
 #factor variables
-par(mfrow=c(2,3))
-for(i in 10:14){
+par(mfrow=c(1,3))
+for(i in 10:12){
   plot(forest[,i],forest$Larea, main = colnames(forest)[i],
        names=levels(forest[,i]), ylab = "log(area)", col = "lightblue")
 }
@@ -154,8 +149,118 @@ for (i in 3:8){
   }
 }
 
+############################MLR Analysis with Interactions#################################
+#predictors that came out of EDA: TrFFMC, DMC, wind, temp
+#we do not consider month and day because they are not meteorological variables
+#we first try MLR on these, including interaction terms suggested by the interaction plots
 
-############################MLR Analysis#################################
+MLR.eda.int.model<-lm(Larea~TrFFMC+DMC+wind+temp+TrFFMC:DMC+TrFFMC:temp+TrFFMC:wind+
+                        DMC:temp+DMC:wind+temp:wind, data = forest)
+summary(MLR.eda.int.model)
+
+#enumerate full model space
+require(leaps)
+attach(forest)
+y<-Larea
+X<-cbind(TrFFMC, DMC, DC, ISI, temp, RH, wind, TrFFMC*DMC, TrFFMC*temp, 
+         TrFFMC*wind,DMC*temp,DMC*RH, DMC*wind, DC*temp, DC*RH, DC*wind, ISI*temp, 
+         ISI*wind, temp*wind, RH*wind)
+regsubsets.out=regsubsets(y ~ X,
+                          data = as.data.frame(cbind(y,X)),
+                          nbest = 2,       # 2 best models for each number of predictors
+                          nvmax = NULL,    # NULL for no limit on number of variables
+                          force.in = NULL, force.out = NULL,
+                          method = "exhaustive") 
+
+#plot regsubsets out, suggests we should drop DC, temp, 1st, 4th, 7,8,9th interactions
+par(mfrow=c(1,1))
+plot(regsubsets.out, scale = "bic", main = "BIC",cex.axis=1,cex.lab=2,cex=2)
+
+leaps.int.model<-lm(Larea~TrFFMC+DMC+ISI+RH+wind+TrFFMC*temp+TrFFMC*wind+DMC*RH+
+                      DMC*wind+ISI*temp+ISI*wind+temp*wind+RH*wind)
+summary(leaps.int.model)
+
+#Use add1() and drop1() to condition on hierarchically appropriate models
+init.model<-lm(Larea~1,data=forest)
+add1(init.model,Larea~TrFFMC+DC+ISI+temp+RH+wind+rain,test="F") #only month significant
+#model<-lm(Larea~month, data=forest)
+#add1(model,y~TrFFMC+DC+ISI+temp+RH+wind+month+day+rain,test="F") #add temp
+#model<-lm(Larea~month+temp, data=forest)
+#add1(model,y~TrFFMC+DC+ISI+RH+month+day+rain+month*temp,test="F") #add singles and interaction
+  
+add1.model<-lm(Larea~month+temp, data=forest)
+summary(add1.model)
+
+fitfull<-lm(Larea~TrFFMC+DMC+DC+ISI+temp+RH+wind+TrFFMC*DMC+TrFFMC*temp+
+              TrFFMC*wind+DMC*temp+DMC*RH+DMC*wind+DC*temp+DC*RH+DC*wind+ISI*temp+ 
+              ISI*wind+temp*wind+RH*wind)
+
+drop1(fitfull, test="F") #drop temp:wind
+model<-lm(Larea~TrFFMC+DMC+DC+ISI+temp+RH+wind+TrFFMC*DMC+TrFFMC*temp+
+            TrFFMC*wind+DMC*temp+DMC*RH+DMC*wind+DC*temp+DC*RH+DC*wind+ISI*temp+ 
+            ISI*wind+RH*wind)
+drop1(model, test="F") #drop nothing
+
+drop1.model<-model
+summary(drop1.model)
+
+#use forward selection, backward selection, and stepwise regression
+#to select a model #exclude spatial variables
+fit0<-lm(Larea~1,dat=forest)
+
+# Forward selection/Stepwise regression/Backwards Elim yield the same
+# Note per documentation, default criterion is BIC
+step(fit0,scope=list(lower=fit0,upper=fitfull),direction="forward") 
+fwd.int.model<-lm(formula = Larea ~ DMC + wind, data = forest) #same as stepwise
+summary(fwd.int.model)
+
+step(fit0,scope=list(lower=fit0,upper=fitfull),direction="backward")
+mean.model<-lm(formula = Larea ~ 1, data = forest)
+summary(mean.model)
+
+BIC(MLR.eda.int.model, add1.model, drop1.model, leaps.int.model,fwd.int.model,mean.model)
+
+#View diagnostics on the forward selection model
+par(mfrow=c(1,2))
+#Residual plot
+resids<-resid(fwd.int.model)
+fit.val<-fitted(fwd.int.model)
+plot(fit.val,resids, main = "Fitted Values vs. Residuals for 
+     Forward Selection Model")
+abline(h=0)
+#Q-Q Plot
+qqnorm(resids)
+qqline(resids, col = "blue")
+
+#Condition this model on nonzero burn area
+nz<-which(forest$area>0)
+fwd.nz.int.model<-lm(Larea ~ DMC + wind, data = forest[nz,])
+summary(fwd.nz.int.model)
+
+#View diagnostics for this nonzero conditioned model
+par(mfrow=c(1,2))
+#Residual plot
+resids<-resid(fwd.nz.int.model)
+fit.val<-fitted(fwd.nz.int.model)
+plot(fit.val,resids, main = "Fitted Values vs. Residuals for 
+     Forward Selection Model")
+abline(h=0)
+#Q-Q Plot
+qqnorm(resids)
+qqline(resids, col = "blue")
+
+#Other diagnostics
+#Durbin Watson test
+require(car)
+durbinWatsonTest(fwd.nz.int.model) #fail to reject, so no autocorrelatin
+#Cook's Distance
+cd<-cooks.distance(fwd.nz.int.model)
+which(cd>qf(0.5,ncol(forest[nz,])+1,nrow(forest[nz,])-ncol(forest[nz,])-1)) #these also look fine
+#K-S test for normality of errors (basically rejects!)
+ks.test(resids,"pnorm", mean = mean(resids), sd=sd(resids),alternative = "two.sided")
+
+
+############################MLR Analysis (without interaction)#################################
 #predictors that came out of EDA: TrFFMC, DMC, wind, temp, month
 #we first try MLR on these
 
@@ -172,24 +277,19 @@ regsubsets.out=regsubsets(y ~ X,
                           nbest = 2,       # 2 best models for each number of predictors
                           nvmax = NULL,    # NULL for no limit on number of variables
                           force.in = NULL, force.out = NULL,
-                          method = "exhaustive") 
-regsubsets.out
-sum.reg<-summary(regsubsets.out)
-sum.reg
+                          method = "exhaustive")
 
 #plot regsubsets out, suggests we should drop TrFFMC, DC, and temp
-par(mfrow=c(1,3))
-plot(regsubsets.out, scale = "r2", main = "R^2",cex.axis=2,cex.lab=2,cex=2)
-plot(regsubsets.out, scale = "adjr2", main = "Adjusted R^2",cex.axis=2,cex.lab=2,cex=2)
+par(mfrow=c(1,1))
 plot(regsubsets.out, scale = "bic", main = "BIC",cex.axis=2,cex.lab=2,cex=2)
 
-reg.subsets.model<-lm(Larea~DMC+ISI+RH+wind+month, data=forest)
-summary(reg.subsets.model)
+leaps.model<-lm(Larea~DMC+ISI+RH+wind+month, data=forest)
+summary(leaps.model)
 
 #use forward selection, backward selection, and stepwise regression
 #to select a model #exclude spatial variables
 fit0<-lm(Larea~1,dat=forest)
-fitfull<-lm(Larea~.,dat=forest[,-c(1,9,11,15,16,17)])
+fitfull<-lm(Larea~.,dat=forest[,-c(1,2,13:15)])
 
 # Forward selection/Stepwise regression/Backwards Elim yield the same
 # Note per documentation, default criterion is BIC
@@ -231,125 +331,58 @@ qqline(resids, col = "blue")
 
 #Other diagnostics
 #Durbin Watson test
+durbinWatsonTest(fwd.nz.model) #fail to reject, so no autocorrelatin
+#Cook's Distance
+cd<-cooks.distance(fwd.nz.model)
+which(cd>qf(0.5,ncol(forest[nz,])+1,nrow(forest[nz,])-ncol(forest[nz,])-1)) #these also look fine
+#K-S test for normality of errors (basically rejects!)
+ks.test(resids,"pnorm", mean = mean(resids), sd=sd(resids),alternative = "two.sided")
 
+############################TESTING MLR MODELS##############################
+detach(forest)
+#repeat data cleaning on testdat set
+#split fires into burn area categories as defined by Ozbayoglu, Bozer
+#1.32, 63.86, 273.05, 773.17
+#5 categories
+testdat$size <- cut(testdat$area, c(-.01,1.32,63.86,273.05,773.17,2000))
+plot(log(area+1)~size, 
+     names = c("Very Small","Small","Medium","Large","Very Large"),
+     main = "Log(area) vs. Fire Size", data = testdat)
+#large and small categories
+testdat$large <- cut(testdat$area, c(-.01,63.86,2000))
 
+#zero and nonzero categories
+testdat$nonzero <- cut(testdat$area, c(-.01,0,2000))
+levels(testdat$nonzero) <- c("zero","nonzero")
 
-############################MLR Analysis with Interactions#################################
-#predictors that came out of EDA: TrFFMC, DMC, wind, temp, month
-#we first try MLR on these, including interaction terms suggested by the interaction plots
+#log transform the area variable
+testdat$Larea<-log(testdat$area + 1)
 
-MLR.eda.int.model<-lm(Larea~TrFFMC+DMC+wind+temp+month+TrFFMC:DMC+TrFFMC:temp+TrFFMC:wind+
-                    DMC:temp+DMC:wind+temp:wind, data = forest)
-summary(MLR.eda.int.model)
+#put area and Larea variables at start of data set
+testdat<-cbind(testdat$area,testdat$Larea,testdat[,5:11],testdat[,c(3,4,12,14:16)])
+#change rain to binomial variable
+testdat$rain<-ifelse(testdat$rain>0,1,0)
+testdat$rain<-as.factor(testdat$rain)
+levels(testdat$rain) <- c("no rain","rain")
+#transform FFMC
+testdat$FFMC <- log(-testdat$FFMC+ max(testdat$FFMC)+1)
+colnames(testdat)[3]<-"TrFFMC"
+#remove outlier in ISI
+testdat<-testdat[which(testdat$ISI<40),]
+colnames(testdat)[1:2]<-c("area","Larea")
 
-#enumerate full model space
-require(leaps)
-attach(forest)
-y<-Larea
-X<-cbind(TrFFMC, DMC, DC, ISI, temp, RH, wind, month, day, TrFFMC*DMC, TrFFMC*temp, TrFFMC*wind,
-         DMC*temp,DMC*RH, DMC*wind, DC*temp, DC*RH, DC*wind, ISI*temp, ISI*wind, temp*wind, RH*wind)
-regsubsets.out=regsubsets(y ~ X,
-                          data = as.data.frame(cbind(y,X)),
-                          nbest = 2,       # 2 best models for each number of predictors
-                          nvmax = NULL,    # NULL for no limit on number of variables
-                          force.in = NULL, force.out = NULL,
-                          method = "exhaustive") 
-regsubsets.out
-sum.reg<-summary(regsubsets.out)
-sum.reg
+#get predictions for all models
+model.list<-list(mean.model, MLR.eda.int.model,leaps.int.model,add1.model,drop1.model,
+             fwd.int.model,MLR.eda.model,leaps.model)
 
-#plot regsubsets out, suggests we should drop TrFFMC, DC, and temp
-par(mfrow=c(1,3))
-plot(regsubsets.out, scale = "bic", main = "BIC",cex.axis=1,cex.lab=2,cex=2)
+in.sample.MSEs<-numeric(9)
+pred.MSEs<-numeric(9)
 
-#Create custom algorithm to condition on hierarchy
-init.model<-lm(Larea~1,data=forest[,-c(1,10)])
-for(i in 3:)
-
-#use forward selection, backward selection, and stepwise regression
-#to select a model #exclude spatial variables
-fit0<-lm(Larea~1,dat=forest)
-fitfull<-lm(Larea~.,dat=forest[,-c(1,9,11,15,16,17)])
-
-# Forward selection/Stepwise regression/Backwards Elim yield the same
-# Note per documentation, default criterion is BIC
-step(fit0,scope=list(lower=fit0,upper=fitfull),direction="forward") 
-
-fwd.model<-lm(Larea ~ DMC + month + temp + DC, data = forest)
-summary(fwd.model)
-
-BIC(MLR.eda.model, reg.subsets.model, fwd.model)
-
-#View diagnostics on the forward selection model
-par(mfrow=c(1,2))
-#Residual plot
-resids<-resid(fwd.model)
-fit.val<-fitted(fwd.model)
-plot(fit.val,resids, main = "Fitted Values vs. Residuals for 
-     Forward Selection Model")
-abline(h=0)
-#Q-Q Plot
-qqnorm(resids)
-qqline(resids, col = "blue")
-
-#Condition this model on nonzero burn area
-nz<-which(forest$area>0)
-fwd.nz.model<-lm(Larea ~ DMC + month + temp + DC, data = forest[nz,])
-summary(fwd.nz.model)
-
-#View diagnostics for this nonzero conditioned model
-par(mfrow=c(1,2))
-#Residual plot
-resids<-resid(fwd.nz.model)
-fit.val<-fitted(fwd.nz.model)
-plot(fit.val,resids, main = "Fitted Values vs. Residuals for 
-     Forward Selection Model")
-abline(h=0)
-#Q-Q Plot
-qqnorm(resids)
-qqline(resids, col = "blue")
-
-#Other diagnostics
-#Durbin Watson test
-
-
-
-
-
-#forward selection on interaction terms yielded
-fwd.intx.model<-lm(formula = Larea ~ ISI:temp:RH + DMC:ISI + TrFFMC:DMC:ISI + 
-                     day, data = forest[nz,])
-summary(fwd.intx.model)
-BIC(fwd.intx.model) # this actually does beat the existing model
-
-resids<-resid(fwd.intx.model)
-fit.val<-fitted(fwd.intx.model)
-plot(fit.val,resids, main = "Fitted Values vs. Residuals for 
-     Forward Selection Model")
-abline(h=0)
-#Q-Q Plot
-qqnorm(resids)
-qqline(resids, col = "blue")
-
-#setup the same model hierarchically, it's basically the same with worse
-#BIC, but may perform better on the testing set
-fwd.intx.h.model<-lm(formula = Larea ~ ISI+ temp + RH+ DC + TrFFMC+ 
-                       ISI:temp + temp:RH + ISI:RH+ TrFFMC:ISI + DMC:ISI +
-                       TrFFMC:ISI + ISI:temp:RH + DMC:ISI + TrFFMC:DMC:ISI + 
-                       day, data = forest[nz,])
-summary(fwd.intx.h.model)
-BIC(fwd.intx.h.model) # this actually does beat the existing model
-
-resids<-resid(fwd.intx.h.model)
-fit.val<-fitted(fwd.intx.h.model)
-plot(fit.val,resids, main = "Fitted Values vs. Residuals for 
-     Forward Selection Model")
-abline(h=0)
-#Q-Q Plot
-qqnorm(resids)
-qqline(resids, col = "blue")
-
-
-############################PENALIZED REGRESSION##############################
-
-
+for(i in 1:9){
+  yhat<-predict(model.list[[i]],X=forest)
+  in.sample.MSEs[i]<-mean((forest$Larea-yhat)^2)
+  yhat2<-predict(model.list[[i]],newdata=testdat)
+  pred.MSEs[i]<-mean((testdat$Larea-yhat2)^2)
+}
+test.results<-cbind(in.sample.MSEs,pred.MSEs)
+test.results
