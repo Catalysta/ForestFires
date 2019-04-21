@@ -1,0 +1,484 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{comment}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{subcaption}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{biblatex}
+\usepackage{bbm}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage[margin=0.75in]{geometry}
+\setlength{\parskip}{0.5em}
+\def\upint{\mathchoice%
+    {\mkern13mu\overline{\vphantom{\intop}\mkern7mu}\mkern-20mu}%
+    {\mkern7mu\overline{\vphantom{\intop}\mkern7mu}\mkern-14mu}%
+    {\mkern7mu\overline{\vphantom{\intop}\mkern7mu}\mkern-14mu}%
+    {\mkern7mu\overline{\vphantom{\intop}\mkern7mu}\mkern-14mu}%
+  \int}
+\def\lowint{\mkern3mu\underline{\vphantom{\intop}\mkern7mu}\mkern-10mu\int}
+\DeclareMathOperator*{\se}{se}
+\newtheorem{theorem}{Theorem}[section]
+\allowdisplaybreaks
+\graphicspath{ {images/} }
+
+
+
+\begin{document}
+\title{STAT 6950 Final Project}
+\author{Fernando Anorve Lopez\\ 
+Christina Sousa\\ }
+\date{\today}
+\maketitle
+  
+\section{\textbf{Introduction}} \label{sec:intro}
+
+In this report we will investigate data are from $n=517$ forest fires occuring in the Montesinho National Park in northeast Portugal between January 2000 and December 2003. They come to us by way of Paulo Cortez and Anibal Morais at the University of Minho, in Guimaraes, Portugal \cite{1}. The main purpose of this data is to predict the behavior of the burn area of a fire using weather-related predictors. Predicting the area of a forest fire might be useful to optimize resources to extinguish a fire.
+
+Forest fires are broadly defined as ``a fire which tends to spread freely and can burn all living and natural components within the forest" \cite{2}. They can be costly to communities and ecological systems, for instance,``physical, chemical, mineralogical, and biological soil properties can be affected by forest fires" \cite{4}. In Portugal, the region from which the data set originated, there are 15,000 to 25,000 wildfires per year on average. These burn anywhere from about 150,000 hectares (ha) to 250,000 ha annually.  \cite{3} 
+
+\subsection{Hypotheses}
+
+Our goal is to use 12 predictors to model the total burned area of large forest fires within the park. This could be done using a multiple linear regression model. Additionally, we would like to identify which values of the predictors yield fires with burn area less than $100m^2$, and which ones lead to larger fires. This could be done using logistic regression. We hypothesize that these approaches will yield better predictive power than the naive model.
+
+\section{\textbf{Data}} \label{sec:data}
+
+At each fire occurrence, a fire inspector recorded the date and and time of the fire, as well as the spatial location of the fire within the park boundaries. They also recorded the type of vegetation, weather conditions, total burn area, and six components of the Fire Weather Index (FWI), a Canadian system for rating fire danger. These included Fine Fuel Moisture Code (FFMC), Duff Moisture Code (DMC), Drought Code (DC), Initial Spread Index (ISI), Buildup Index (BUI). Although the individual elements are not measured on the same scale, higher values indicate greater danger of fire in all cases. 
+
+The researchers did not include BUI in the data, because it was strongly collinear with the other predictors.
+
+\subsection{Predictor Variables} 
+  \begin{enumerate}
+        \item \textbf{X}: x-axis spatial coordinate within the Montesinho park map: 1 to 9
+        \item \textbf{Y}: y-axis spatial coordinate within the Montesinho park map: 2 to 9
+        \item \textbf{month}: month of the year: ``jan'' to ``dec''
+        \item \textbf{day}: day of the week: ``mon'' to ``sun''
+        \item \textbf{FFMC}: index from the FWI system: 18.7 to 96.20
+        \item \textbf{DMC}: index from the FWI system: 1.1 to 291.3
+        \item \textbf{DC}: index from the FWI system: 7.9 to 860.6
+        \item \textbf{ISI}: index from the FWI system: 0.0 to 56.10
+        \item \textbf{temp}: temperature in Celsius degrees: 2.2 to 33.30
+        \item \textbf{RH}: relative humidity in \%: 15.0 to 100 
+        \item \textbf{wind}: wind speed in km/h: 0.40 to 9.40
+        \item \textbf{rain}: outside rain in mm/m2 : 0.0 to 6.4\\
+    \end{enumerate}
+    
+    To provide a better understanding of the spatial information, figure \ref{fig:firstmap} illustrates how the park's map was divided in the coordinates \textbf{X} and \textbf{Y} mentioned above.
+    
+\begin{figure}
+    \centering
+    \includegraphics{spatial_info.jpeg}
+    \caption{Spatial coordinates \textbf{X} and \textbf{Y}}
+    \label{fig:firstmap}
+\end{figure}
+    
+\subsection{Response Variable} 
+    
+\textbf{area}: the burned area of the forest (in ha): 0.00 to 1090.84
+
+
+\subsection{Limitations}
+
+The burn area of forest fires is a highly variable response that depends on a myriad of factors, from the type of vegetation in the area, to meteorological conditions, to type of terrain and the methods of containment. For this reason, this problem is viewed in existing literature as a challenging prediction problem, and is often used to put various modern machine learning methods to the test. \cite{1}\cite{2}\cite{5} Hence we should view any models arising from this analysis as a step towards improving the prospects of using on-line meteorological data to assist in fire preparedness. It is unreasonable to expect an exceedingly accurate predictive model at this point in time, given the complex nature of the problem and the still-developing computational techniques for analyzing this kind of data.
+
+More specific to this data set, fires that burn less than $100m^2$ of area are all catalogued as zero. This poses a missing data problem, in which we do not have a continuous response for observations with burn areas less than $100m^2$.
+
+In their paper ``Estimation of the Burned Area in Forest Fires Using Computational Intelligence Techniques," Ozbayoglu and Bozer suggest a five-category burn area scale for classifying fires \cite{2}: 
+
+\begin{itemize}
+    \item \textit{Very Small}: 0-1.32 ha
+    \item \textit{Small}: 1.32-63.86 ha
+    \item \textit{Medium}: 63.86-273.05 ha
+    \item \textit{Big}: 273.05-773.17 ha
+    \item \textit{Very Big}: 773.17-5661 ha
+\end{itemize}
+
+We found that in the Montesinho Forest Fires training data set, even splitting on 63.86ha alone left only 13 records in the `` $> 63.86$ha'' category. Hence most of the fires in this data set would be classified as ``Small", and there is not much information with which to predict ``Large'' ($>63.86$ha) versus ``Small" ($<63.86$ha). For this reason we decided to split the data on ``Zero" ($<100m^2$) versus ``Nonzero" ($>100m^2$) burn area, since this yielded a more even split of the data.
+
+\section{\textbf{Exploratory Data Analysis}} \label{sec:eda}
+
+Now that we are familiar with the data and its limitations, let us have a look at some visualizations to get an idea of the relationships between the various predictors and \textbf{area}. When modeling the log transformation of the area, we will refer to this variable as \textbf{Larea}.
+
+As part of the Exploratory Data Analysis, we plotted the \textbf{area} in Figure \ref{fig:logarea_XY} using the transformation $\log(\textbf{Area}+1)$ with respect to the \textbf{XY} coordinates to get a better idea of how the burnt area is distributed throughout the park. This particular transformation is useful because small fires appear with a 0 value, while the large fires area appear in a logarithmic scales. Notice that the data set has discrete coordinates \textbf{X} and \textbf{Y}. Hence a randomly jittered version of the data is shown to avoid overplotting.
+
+\begin{figure}
+    \centering
+    \includegraphics{Mts_Map.jpeg}
+    \caption{Log(Area+1) with respect to the spatial coordinates}
+    \label{fig:logarea_XY}
+\end{figure}
+
+First, we view the continuous predictors. (Figure \ref{fig:plotmatrix}) Note the discretization which has occurred in the \textbf{Larea} plots for the zero burn area records. Also note that there do not appear to be any prominent predictors here. 
+
+Within the continuous predictors, non are highly linearly correlated with \textbf{Larea}. \textbf{DMC} and \textbf{wind} are the most highly correlated with \textbf{Larea}, but at only 8\% and 10\% respectively. For more details see Appendix 6.1.1.
+
+Considering now the categorical predictors (Figure \ref{fig:CatPreds}), we note that December and May appear to stand out as having higher log(area) values, as well as \textbf{no rain}. To suss out whether there may be some useful categories for prediction here, ran ANOVA on each of \textbf{month}, \textbf{day}, and \textbf{rain}.  For \textbf{month}, \textbf{dec} indeed emerged as having significantly higher mean \textbf{Larea} than other months (p-value=0.0136). Also \textbf{may} had somewhat significantly higher mean \textbf{Larea} (p-value=0.0565). The ANOVA test for \textbf{day} and \textbf{rain} did not reveal any groups with significantly higher mean \textbf{Larea}, so these do not appear to be useful.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width = .85\textwidth]{ScatterMatrix.png}
+\caption{Scatterplot Matrix of the Transformed Continous Predictor Variables versus Log(Area+1)}
+\label{fig:plotmatrix}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width = .8\textwidth]{Boxplots.png}
+    \caption{Categorical Predictors versus Larea}
+    \label{fig:CatPreds}
+\end{figure}
+
+Since we are interested in classifying zero-burn area fires versus nonzero burn-area fires, we show the plot matrix  (Figure \ref{fig:greenvsblack}) of the continuous variable marking the points different colors for the two types of fires: zero or nonzero burn. We also plot histograms (Figure \ref{fig:HistComps2}) for each of the continuous predictors, conditioned on zero or nonzero burn, to see if there is any separation in the distributions for these.
+
+\begin{figure}
+    \centering
+    \includegraphics{plot_matrix.jpeg}
+    \caption{Scatterplot Matrix of the Transformed Continous Predictor Variables with Different Colors for Zero (green) or Nonzero Burn (black)}
+    \label{fig:greenvsblack}
+\end{figure}
+
+The modes of these distributions do not appear to be separated, except in the case of \textbf{TrFFMC} (slight), \textbf{DMC}, and \textbf{temp}. However because tthere is not any clear distinct visual separation, we ran two-sample t-tests on each of the continuous predictors to determine whether any of these means significantly differed from one another. \textbf{TrFFMC}, \textbf{DMC}, and \textbf{temp} all significantly differed at the $\alpha=.10$ significance level (but not at $\alpha=0.05$). Since the distribution of \textbf{DC} is highly non-normal, we instead used a Wilcoxan Rank Sum test, which also rejected with a p-value of $0.07461.$ These are promising results, as they indicate that for these variables, there may in fact be a detectable mean shifts in zero-area fires versus nonzero-area fires, albeit slight. It will be interesting to see if regression analysis confirms these preliminary results.
+
+For additional plots investigating separation in the distributions of continuous predictors conditioned on zero burn area versus nonzero burn area, see Appendix 6.1.2.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width = .85\textwidth]{HistComps1.png}
+    \label{fig:HistComps1}
+    \includegraphics[width = .85\textwidth]{HistComps2.png}
+    \caption{Comparisons of Distributions of Continuous Predictors Conditioned on Zero burn area and Nonzero Burn Area}
+    \label{fig:HistComps2}
+\end{figure}
+
+As a final effort to detect which predictors may be useful here, we fit simple linear regressions with each of the continuous predictors separately. The slopes are not striking, however again \textbf{TrFFMC} and \textbf{DMC} appear to emerge, as was the case in the histogram comparisons. Also, \textbf{wind} looks like it may be slightly helpful in predicting \textbf{Larea}. We note that the slope for \textbf{temp} is not as striking as one might expect intuitively.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width = \textwidth]{reg1.png}
+    \caption{Simple linear regressions of continuous predictors on Larea}
+    \label{fig:reg1}
+\end{figure}
+
+Since looking at the predictors individually does not seem to be very fruitful, perhaps it would behoof us to investigate the interactions between these predictors. After all, weather systems are very dynamic and it is reasonable that there are many interactions between wind, humidity, temperature, and the fire indexes. Making use of some intermediate multiple linear regressions, we plotted all two way interactions. We immediately notice that certain variables stand out as having definite interactions. Hence these ought to certainly be considered in the modeling process. Note that there was no mention of interactions in the existing literature on this data set.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width = .5\textwidth]{interactions1.png}
+    \includegraphics[width = .5\textwidth]{interactions2.png}
+    \includegraphics[width = .5\textwidth]{interactions3.png}
+    \includegraphics[width = .5\textwidth]{interactions4.png}
+    \includegraphics[width = .5\textwidth]{interactions5.png}
+    \includegraphics[width = .5\textwidth]{interactions6.png}
+    \caption{Two-way interactions of continuous predictors with respect to Larea}
+    \label{fig:interactions}
+\end{figure}
+
+We conclude this Exploratory Data Analysis section by reiterating that this is not a typical regression or machine learning problem, where suspected predictors emerge somewhat immediately through plotting and remain consistent when viewed from different perspectives. Here we have that \textbf{wind} and \textbf{DMC} appeared to be candidates in terms of linear correlation, \textbf{month=dec} appeared as candidates in consideration of categorical predictors, while in seeking separation of zero and nonzero burn areas, \textbf{TrFFMC}, \textbf{DMC}, and \textbf{temp} appeared to be promising candidates. \textbf{TrFFMC}, \textbf{DMC}, and \textbf{wind} also emerged as promising candidates in the simple linear regressions. Hopefully machine learning methods can help us to detect what the human eye cannot in this data set, to beat out a Naieve model and advance the case for predicting fire burn areas with on-line meteorological data.
+
+\section{\textbf{Methods}} \label{sec:methods}
+
+
+
+\subsection{\textbf{Naive Model}}
+
+Since we do not find any potentially strong predictors for total burned area within this data set, we will set a benchmark using the Naive model, which simply predicts the total burned area to be the sample mean of the \textbf{area} data obtained in the data set.
+
+\subsection{\textbf{Logistic Regression}}
+Our first approach to model the data is to apply a logistic regression using the weather predictors mentioned in Section 2.1 to predict the likelihood that a given fire has a small or a large burn area.
+
+\subsubsection{Model selection}
+
+As the variable selection technique all of the possible models using weather predictors were compared using the deviance as a reference of fit. Recall that the weather related variables are \textbf{FFMC}, \textbf{DMC}, \textbf{DC}, \textbf{ISI}, \textbf{temp}, \textbf{RH}, \textbf{wind}, and \textbf{rainbin}.
+
+ Figure \ref{fig:weather_model} shows how deviance is reduced as more predictors are added to the model. For each number of predictors, the two best models in terms of the deviance. Its should be noticed that the deviance of the naive model is approximately 535, while the deviance of the complete model is 520 (i.e. there is not a very significant change). 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics{weather_model.jpeg}
+    \caption{Caption}
+    \label{fig:weather_model}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics{logmodel4.jpg}
+    \caption{Summary of the Logistic Regression Model Using \textbf{DC}, \textbf{temp}, \textbf{wind}, and \textbf{rainbin} as Regressors}
+    \label{fig:summary}
+\end{figure}
+
+Again from Figure \ref{fig:weather_model} we observe that using more than four predictors does not decrease the deviance of our model considerably. Hence we can say that using four predictors is appropriate. Restricted to four predictors, the best model uses the variables \textbf{DC}, \textbf{temp}, \textbf{wind}, and \textbf{rainbin}, and its summary is shown in Figure \ref{fig:summary}. Note that only \textbf{wind} appears to be significant at a 0.05 level, while \textbf{DC} seems to be significant at a $\alpha = 0.10$ level but not at $\alpha = 0.05.$ 
+
+\subsection{\textbf{Diagnostics}}
+
+As in this case there is only one observation per covariate, an analysis based on the residuals plot or a qq-plot can be misleading. Instead we show the Residuals vs. Leverage plot in Figure \ref{fig:leverage}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics{leverage.jpeg}
+    \caption{Residuals vs. Leverage Plot - logistic model}
+    \label{fig:leverage}
+\end{figure}
+
+Note in Figure \ref{fig:leverage} that even though five points have higher leverage than the rest of the observations, Cook's distance lines do not appear in the graph, implying that they still have low Cook’s distance scores. 
+
+\subsubsection{Testing Results}
+Predictions on the testing set using the logistic model provided useful diagnostics. We can get predicted values by calculating the predicted probability $$\hat p_{X^*} = \hat p(Y | X^*_1, X^*_2, X^*_3, X^*_4), $$ and next assigning the value $$\hat Y = \left\{\begin{array}{cc}
+    1 & \qquad \text{if }  p_{X^*} >= 0.5  \\
+    0 & \qquad \text{if }  p_{X^*} < 0.5 
+\end{array}\right.$$
+
+We obtained the following results:
+
+\begin{center}
+\begin{tabular}{ |r|c|c| } 
+ \hline
+  & Small Fires & Large Fires \\ 
+ \hline
+ Predicted & 27 & 102 \\ 
+ Actual values & 64 & 65 \\ 
+ \hline
+\end{tabular}
+\end{center}
+
+
+\begin{center}
+\begin{tabular}{ |c|c| } 
+ \hline
+  & Frequency \\
+ \hline
+  Accurate Predictions & 74 \\ %% should i use the word predictions??? uhm
+  Wrong Predictions & 55\\ 
+  \% of Accurate Predictions & 57\% \\
+  False Small Fires & 9\\
+  False Large Fires & 46 \\
+ \hline
+\end{tabular}
+\end{center}
+
+The logistic regression model correctly predicted 57\% of the actual outcomes of the testing set. This is a rather poor result considering that the naive model, which assigns $\hat Y= 1$ regardless of the predictors, would have 50.38\% of accuracy. Interestingly, this model can be considered conservative in the sense that the predicted values indicated that most of the fires were likely to be large given the regressors.
+
+\subsection{\textbf{CART}}
+
+An alternative model is a classiﬁcation tree. Our goal is to ﬁnd a model for predicting small versus large fires from our weather data. Our set of predictors was the same as the logistic regression: \textbf{FFMC}, \textbf{DMC}, \textbf{DC}, \textbf{ISI}, \textbf{temp}, \textbf{RH}, \textbf{wind}, and \textbf{rainbin}.
+
+Figure \ref{fig:cp_xv} shows that, in terms of the Cross-Validated Error, the tree does not seem to improve considerably as complexity parameter varies. Hence a pruned version of the tree with CP = 0.03 was considered (Figure \ref{fig:tree}).
+
+\begin{figure}
+    \centering
+    \includegraphics{cp_xv.jpeg}
+    \caption{Cross-Validated Error Versus Complexity Parameter}
+    \label{fig:cp_xv}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics{tree.jpeg}
+    \caption{Classifcation tree pruned with CP = 0.03}
+    \label{fig:tree}
+\end{figure}
+
+\subsection{\textbf{Diagnostics}}
+
+
+\subsection{\textbf{Multiple Linear Regression}}
+
+We tried three different sets of predictors for the Multiple Linear Regression model with \textbf{Larea} as a response. 
+
+The first set of predictors were those suggested by our EDA analysis. These included \textbf{TrFFMC, DMC, wind, temp, month}. Second, we considered the set of predictors suggested by full enumeration of the model space using the \textbf{leaps} package. These included \textbf{DMC, ISI, RH, wind, month}. Finally, we used the set of predictors suggested by forward selection, backward elimination, and stepwise regression (all three methods suggested the same predictors): \textbf{DMC, month, temp, DC}.
+
+\subsection{\textbf{Diagnostics}}
+We use BIC to compare models (see appendix for further discussion of why other metrics were not preferred). It is interesting that the statistical intuition of our EDA actually beat the \textbf{Leaps} package here in terms of BIC reduction. However, since forward selection beats them both with one less predictor, we would opt for that model from the ones considered in this section. 
+
+\begin{center}
+\begin{tabular}{ |c|c|c| } 
+ \hline
+ Predictors & df & BIC \\ 
+ \hline
+ EDA & 17 & 1428.420 \\ 
+ Leaps & 17 & 1431.379\\ 
+ Forward Selection & 16 & 1422.688\\  
+ \hline
+\end{tabular}
+\end{center}
+
+Unfortunately, it appears that the error distribution for this model is rather skewed, so that assumption of normal errors has been violated here. This is likely due to the distcretization of the burn areas less than $100m^2$.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width = .5\textwidth]{fwdresids.png}
+    \caption{Residual Plot and QQ Plot from Forward Selection Model}
+    \label{fig:resids}
+\end{figure}
+
+Indeed, if we condition this model on nonzero burn area, we observe somewhat better conformance to assumptions, although the residual distribution still appears to be slightly skewed.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width = .5\textwidth]{fwdresidsnz.png}
+    \caption{Residual Plot and QQ Plot from Forward Selection Model conditioned on Nonzero Burn Area}
+    \label{fig:resids}
+\end{figure}
+
+
+
+Since we noted a high level of multicollinearity in this data, we were curious to see whether the addition of any higher level interaction terms may benefit the MLR approach to this problem. This is something that had not yet been attempted before in any of the existing literature, but nevertheless is a simple and viable method of using on-line meteorological data to predict burn area.
+
+To investigate which higher-order interaction terms may be useful, we performed forward selection on all existing predictors, plus all two- and three-way interactions between those predictors. This yielded a model with \textbf{ISI:temp:RH, DMC:ISI, TrFFMC:DMC:ISI, day}. Since this model does not obey the hierarchical principal, which states that all lower order interaction terms and single predictors ought to be included in the model before higher interaction terms, we do not believe such a model could accurately reflect reality. However it is possible that these various meteorological factors are indeed interacting to produce more or less favorable burn conditions. Hence we also tried a model with these as well as the lower-order (hierarchically obeying) interaction terms.
+
+It may be that MLR is simply not the best method for this task, so we next try penalized regression models to see if we have more success.
+
+\subsection{\textbf{Penalized Regression}}
+
+\subsubsection{LASSO}
+
+\subsubsection{Ridge}
+
+\subsubsection{ElasticNet}
+
+\subsection{\textbf{Diagnostics}}
+
+
+\section{\textbf{Discussion}} \label{sec:concl}
+\subsection{Conclusion}
+
+\subsection{Future Work}
+
+
+\section{\textbf{Appendix}} \label{sec:apx}
+
+\subsection{Supplementary Figures}
+
+\subsubsection{Correlation Matrix}
+
+Following is the correlation matrix for the continuous predictors in the data set. Note that while many of the predictors are correlated with one another, none exhibit a high degree of correlation with the response \textbf{Larea}.
+
+It appears that \textbf{TrFFMC} and \textbf{ISI} are highly correlated (-0.7665), as well as \textbf{DC} and \textbf{DMC} (0.6825), \textbf{temp} and \textbf{TrFFMC} (-0.6047). Furthermore, \textbf{temp} and \textbf{DMC} have somewhat high linear correlation (0.4923),along with \textbf{temp} and \textbf{RH} (-0.4866), \textbf{temp} and \textbf{DC}(0.4886) and \textbf{TrFFMC} and \textbf{DMC} (-0.4847). Finally, \textbf{temp} and \textbf{ISI} appear to be somewhat linearly correlated (0.4417), along with \textbf{TrFFMC} and \textbf{DC} (0.4886).
+
+\begin{center}
+\begin{tabular}{ |c|c|c|c|c|c|c|c|c| } 
+ \hline
+ & Larea & TrFFMC & DMC & DC & ISI & Temp & RH & wind \\ 
+ \hline
+ Larea & 1.0000 & -0.0550 & 0.1032 & 0.0667 & 0.0114 & 0.0472 & -0.0421 & 0.0802\\ 
+ TrFFMC & -0.0550 & 1.0000  & -0.4847 & -0.3910 &  -0.7665 & -0.6047 & 0.3011 & 0.0708\\ 
+ DMC & 0.1033 &  -0.4847 & 1.0000 & 0.6825 & 0.3597 & 0.4923 & 0.0849 & -0.1459\\  
+ DC & 0.0667 & -0.3910 & 0.6825 & 1.0000 & 0.2970 & 0.4886 & 0.01256 & -0.1859\\ 
+ ISI & 0.0114 & -0.7665 & 0.3597 & 0.2970 & 1.0000 & 0.4417 & -0.1366 & 0.0839\\ 
+ Temp & 0.0472 & -0.6047 & 0.4923 & 0.4886 & 0.4417 & 1.0000 & -0.4866 & -0.2342\\ 
+ RH & -0.0421 & 0.3011 & 0.0849 & 0.0126 & -0.1366 & -0.4866 &  1.0000 & 0.0576\\ 
+ wind & 0.0802 & 0.0708 & -0.1459 & -0.1859 & 0.0839 & -0.2342 & 0.0576 & 1.0000\\ 
+ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{Scatterplots Colored by Burn Area}
+
+Here we see the scatterplots of the continuous predictors, colored by zero versus nonzero burn area. What we are looking for is some separation on the x-scale between black and red dots. Since this is just another way of looking at the histograms in Section 3, we similarly observe that we do not find the separation we hope to see. It only appears that the frequency of the zero burn area points corresponds to the frequencies of the nonzero burn areas along the x-scale, indicating that as we move along the range of each of these predictors, we do not find even a fuzzy transition from zero burn area to nonzero burn area. Both zero burn areas and nonzero burn areas appear to occur with proportional frequencies throughout the ranges of these predictors, emphasizing the challenge of singal detection in this problem.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width = .8\textwidth]{scatter1.png}
+    \label{fig:scatter1}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width = .8\textwidth]{scatter2.png}
+    \caption{Comparisons of Distributions of Continuous Predictors Conditioned on Zero burn area and Nonzero Burn Area}
+    \label{fig:scatter2}
+\end{figure}
+
+
+
+\subsection{Data Transformations and Cleaning}
+
+\subsubsection{Training and Testing Split}
+
+We randomly split the 517 available observations into a training and testing set, using a ratio of approximately 75/25. The testing set was held out from the model selection process so as not to introduce bias.
+
+\subsubsection{Area}
+
+Since there were many observations with zero area values, we modeled the response in most cases as the transformation
+
+$$\log(\textbf{area}+1)$$
+
+This transformation has the property that all zero values remain unchanged while the positive observations are presented in a logarithmic scale.
+
+\subsubsection{rain}
+There are only 7 nonzero \textbf{rain} values: Considered \textbf{rainbin}
+
+\subsubsection{FFMC}
+
+As observed in Figure \ref{fig:hFFMC}, the original version of the predictor FFMC is negatively skewed. Since log transformations are generally useful for positive skewness, we can try to normalize this predictor by reflecting it, adding an appropriate value to make it positive, and finally applying a log transformation. 
+$$f(\textbf{FFMC}) = \log (-\textbf{FFMC}+\max(\textbf{FFMC})+1)$$
+ 
+ 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics{hist_FFMC.jpeg}
+    \caption{Histogram of FFMC Variable}
+    \label{fig:hFFMC}
+\end{figure}
+
+Figure \ref{fig:TrFFMC} shows the final distribution of this transformed variable.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics{TrFFMC.jpeg}
+    \caption{Histogram of FFMC Variable}
+    \label{fig:TrFFMC}
+\end{figure}
+
+\subsubsection{Observation Order}
+
+We also noticed a trend in observation order with respect to \textbf{Larea}: this is likely due to the fact that this data came from two different data sets which were combined manually. \cite{1} When combining the two data sets, it seems that the first set was sorted by \textbf{area}, while the second set was ordered chronologically. This prevented us from using a time series approach on the data set in its entirety.
+ 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width = .7\textwidth]{obsnord.png}
+    \label{fig:obsnord}
+\end{figure}
+
+\subsubsection{Selection Criteria}
+
+The Mallow's CP criterion does not apply in the MLR scenario because we cannot assume that the full model exactly describes behavior of burn area. Also, since the available predictors do not explain much of the variability in the response, adjusted $R^2$ is being influenced more by the number of variables in the model than the amount of variability explained, in some cases turning negative. This is why we chose to compare models based on the BIC criterion.
+
+\subsection{\textbf{Other Methods Attempted}}
+
+\subsection{\textbf{K-means Clustering}}
+
+\subsection{\textbf{Diagnostics}}
+
+\subsection{\textbf{Support Vector Machine}}
+
+\subsection{\textbf{Diagnostics}}
+
+\subsection{\textbf{Random Forest}}
+
+\subsection{\textbf{Diagnostics}}
+
+
+\begin{thebibliography}{9}
+
+\bibitem{1} \textbf{P. Cortez and A. Morais}, ``A Data Mining Approach to Predict Forest Fires using Meteorological Data.'' In J. Neves, M. F. Santos and J. Machado Eds., New Trends in Artificial Intelligence, Proceedings of the 13th EPIA 2007 - Portuguese Conference on Artificial Intelligence, December, Guimarães, Portugal, pp. 512-523, 2007. APPIA, ISBN-13 978-989-95618-0-9.
+
+\bibitem{2} \textbf{Ozbayoglu, Murat & Bozer, Recep.}, ``Estimation of the Burned Area in Forest Fires Using Computational Intelligence Techniques." Procedia Computer Science. 12. 282–287. 10.1016/j.procs.2012.09.070. (2012). 
+
+\bibitem{3} \textbf{Mateus, Paulo & Fernandes, Paulo.}, ``Forest Fires in Portugal: Dynamics, Causes and Policies." Evolution of Forest Cover in Portugal: From the Miocene to the Present. 10.1007/978-3-319-08455-8\_4. (2014)
+
+\bibitem{4} \textbf{Certini, G.} Oecologia 143: 1. https://doi.org/10.1007/s00442-004-1788-8 (2005) 
+
+\bibitem{5} \textbf{Guruh Fajar Shidik and Khabib Mustofa} ``Predicting Size of Forest Fire Using Hybrid Model." IFIP International Federation for Information Processing (Eds.): ICT-EurAsia 2014, LNCS 8407, pp. 316–327, 2014. 
+
+\bibitem{11} \textbf{Casella, George and Roger L. Berger}, \textit{Statistical Inference: Second Edition}, Duxbury 
+\bibitem{9} \textbf{Wickham, Hadley}, ``Tidy Data." \textit{Journal of Statistical Software}, 59.10 \url{https://www.jstatsoft.org/article/view/v059i10}, 2014.
+
+\end{thebibliography}
+
+
+
+
+\end{document}
